@@ -1,0 +1,47 @@
+{
+  "name": "stdogviz",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "run-s dev:js webpack-server",
+    "build": "run-s prebuild build:dir build:js",
+    "prebuild": "run-s clean ",
+    "clean": "rimraf build",
+    "webpack-server": "webpack-dev-server --env.NODE_ENV=dev --progress --color --open --hot",
+    "webpack-watch": "webpack --env.NODE_ENV=dev --progress --color --watch --hot",
+    "dev:js": "webpack --env.NODE_ENV=dev",
+    "build:dir": "copyfiles -a -u 2 src/public/assets/**/*.* build/",
+    "build:js": "webpack --env.NODE_ENV=prod --progress --color"
+  },
+  "repository": {
+    "type": "git",
+    "url": "stdogviz"
+  },
+  "author": "bruno messias",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.5",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^8.1.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babelify": "^10.0.0",
+    "copyfiles": "^2.2.0",
+    "html-loader": "^1.1.0",
+    "html-webpack-plugin": "^4.2.0",
+    "npm-run-all": "^4.1.5",
+    "raw-loader": "^4.0.1",
+    "uglifyjs-webpack-plugin": "^2.2.0",
+    "webpack": "^4.42.1",
+    "webpack-cli": "^3.3.11",
+    "webpack-dev-server": "^3.10.3",
+    "webpack-glsl-loader": "^1.0.1"
+  },
+  "dependencies": {
+    "alertifyjs": "^1.13.1",
+    "colormap": "^2.3.1",
+    "dat.gui": "^0.7.7",
+    "three": "^0.115.0"
+  }
+}
