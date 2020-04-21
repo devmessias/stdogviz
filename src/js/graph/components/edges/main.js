@@ -128,19 +128,25 @@ export default class Edges {
         this.positions = positions;
         this.colors = colors;
     }
-    createEdges(nodesData, edgesData) {
+    deleteAllEdges(){
         if(this.instancedEdges){
             this.instancedEdges.geometry.dispose()
             this.instancedEdges.material.dispose()
             this.instancedEdges.geometry.needsUpdate = true;
             this.instancedEdges.material.needsUpdate = true;
             this.scene.remove(this.instancedEdges)
+            this.instancedEdges = null;
         }
+    }
+
+    createEdges(nodesData, edgesData) {
+        this.deleteAllEdges()
+
         this.edgesData = edgesData
         this.numEdges = this.edgesData.nodes.length
         this.createVertices(nodesData, edgesData)
         var geometry = new THREE.BufferGeometry();
-        var material = new THREE.LineBasicMaterial( { vertexColors: true, transparent:true, opacity:0.5, linewidth:5 } );
+        var material = new THREE.LineBasicMaterial( { vertexColors: true, transparent:true, opacity:0.5, linewidth:1 } );
 
         geometry.setAttribute( "position", new THREE.Float32BufferAttribute( this.positions, 3 ) );
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3 ) );

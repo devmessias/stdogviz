@@ -14,6 +14,8 @@ export default class Interaction {
         // Instantiate keyboard helper
         this.keyboard = new Keyboard();
 
+        //this.keyboard = new Keyboard(document.getElementById('containergraphCanvas'));
+
         // Listeners
         // Mouse events
 

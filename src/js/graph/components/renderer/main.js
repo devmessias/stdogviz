@@ -3,6 +3,8 @@ import alertify from 'alertifyjs';
 
 import Config from '../../../data/config';
 
+import Stats from './../../helpers/stats';
+
 function dataURIToBlob( dataURI ) {
     const binStr = window.atob( dataURI.split( ',' )[1] );
     const len = binStr.length;
@@ -37,9 +39,10 @@ function defaultFileName (ext) {
 
 
 export default class Renderer {
-    constructor(scene, canvas, camera, appState ) {
+    constructor(scene, container, canvas, camera, appState ) {
         this.scene = scene;
         this.canvas = canvas;
+        this.container = container;
         this.camera = camera
         this.appState = appState
 
@@ -50,10 +53,16 @@ export default class Renderer {
             {
                 canvas: canvas,
                 antialias: Config.render.antialias,
-                preserveDrawingBuffer: true,
-                alpha:true
+                //preserveDrawingBuffer: true,
+                //alpha:true
             }
         );
+
+        if(Config.useStats) {
+            this.stats = new Stats(this.renderer);
+            this.stats.setUp();
+        }
+
 
         this.renderer.setPixelRatio(window.devicePixelRatio); // For retina
 
@@ -67,8 +76,8 @@ export default class Renderer {
         // Initial size update set to canvas canvas
         this.updateSize(this.canvas.offsetWidth,this.canvas.offsetHeight);
         // Listeners
-        document.addEventListener('DOMContentLoaded', () => this.updateSize(this.canvas.offsetWidth,this.canvas.offsetHeight), false);
-        window.addEventListener('resize', () => this.updateSize(this.canvas.offsetWidth,this.canvas.offsetHeight), false);
+        document.addEventListener('DOMContentLoaded', () => this.updateSize(), false);
+        window.addEventListener('resize', () => this.updateSize(), false);
 
         this.render = this.render.bind(this)
         this.updateSize = this.updateSize.bind(this)
@@ -101,6 +110,9 @@ export default class Renderer {
     }
 
     updateSize(widthRender, heightRender) { //if (this.appState.takingScreenshot) return;
+        widthRender = widthRender || this.container.clientWidth
+        heightRender= heightRender ||this.container.clientHeight
+
         this.setCameraAspect(widthRender, heightRender)
         this.renderer.setSize(widthRender, heightRender, );
         //this.appState.originalAspect  = aspect
@@ -135,9 +147,33 @@ export default class Renderer {
     render() {
         // Renders scene to canvas target
         // this.pickHelper.pick( scene, camera, 0)
+        if(Config.useStats)
+            Stats.start();
+
         this.renderer.render(this.scene, this.camera);
+        if(Config.useStats)
+            Stats.end();
+
+
+    }
+    delete(){
+        this.render = ()=>0;
+        document.removeEventListener('DOMContentLoaded', () => this.updateSize(), false);
+        window.removeEventListener('resize', () => this.updateSize(), false);
+        const btnSave = document.getElementById("btnSaveImage");
+        if(btnSave)
+            btnSave.removeEventListener("click",  event=>this.takeScreenshot())
+
+    }
+    stop(){
+        //const dataURI = this.getURI(widthImage, heightImage, saveWithTransparency);
+        this.delete()
     }
     getURI(widthImage, heightImage, saveWithTransparency){
+        widthImage = widthImage || this.container.clientWidth
+        heightImage= heightImage ||this.container.clientHeight
+
+
         this.setCameraAspect(widthImage, heightImage)
         // set camera and renderer to desired screenshot dimension
         //this.camera.aspect = widthImage / heightImage;
@@ -152,13 +188,13 @@ export default class Renderer {
 
         this.renderer.render( this.scene, this.camera, null, false );
 
-        const DataURI = this.canvas.toDataURL( 'image/png', 1.0 );
+        const dataURI = this.canvas.toDataURL( 'image/png', 1.0 );
 
         if(saveWithTransparency)
             this.scene.background = color;
         this.appState.takingScreenshot = false
 
-        this.updateSize(this.canvas.offsetWidth,this.canvas.offsetHeight);
+        this.updateSize();
 
         return dataURI
     }

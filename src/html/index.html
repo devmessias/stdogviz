@@ -6,15 +6,22 @@
     <meta charset="UTF-8">
 <style>
     <%= require('html-loader!./components/main.css') %>
+    <%= require('html-loader!./components/rStats.css') %>
 </style>
     <title><%= htmlWebpackPlugin.options.title %></title>
 
   </head>
 
   <body>
-    <canvas 
-        id="appContainer" >
-    </canvas>
+      <div id="containergraphCanvas">
+          <canvas 
+           id="graphCanvas" >
+          </canvas>
+            <div 
+                style="position:absolute;top:0px;right:0px;z-index:1;"
+                id="datGuigraphCanvas">
+            </div>
+        </div>
 
     <%= require('html-loader!./components/modalSave.html') %>
     <% if (htmlWebpackPlugin.options.env === 'dev') { %>

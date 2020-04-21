@@ -24,9 +24,4 @@ export const fragmentGlow = `
 
     }`;
 
-export const shaders = {
-    glow: {
-        vertex: vertexGlow,
-        fragment: fragmentGlow
-    }
-}
+

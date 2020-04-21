@@ -14,12 +14,6 @@ import Edges from "./components/edges/main";
 import Keyboard from "./interactions/keyboard";
 import DatGUI from './interactions/datGUI';
 
-// data
-//import Config from "./../data/config";
-
-
-// State of the application
-
 
 export default class Graph {
     constructor(
@@ -28,8 +22,11 @@ export default class Graph {
         keyboardPressFunction
     ) {
 
+
         this.Config = Config
-        this.canvas = document.querySelector("#appContainer");
+        this.idCanvasHTML = idCanvasHTML
+        this.canvas = document.getElementById(`${idCanvasHTML}`);
+        this.container = document.getElementById(`container${idCanvasHTML}`);
         this.camera = new THREE.PerspectiveCamera(
             Config.camera.fov, Config.camera.aspect, Config.camera.near, Config.camera.far);
         this.scene = new THREE.Scene();
@@ -64,28 +61,38 @@ export default class Graph {
         this.nodes = new Nodes(this.scene, 0, 0);
         this.edges = new Edges(this.scene, 0, 1);
 
-        this.renderer = new Renderer(this.scene, this.canvas, this.camera, this.state);
+        this.renderer = new Renderer(this.scene,this.container, this.canvas, this.camera, this.state);
 
         this.controls = new Controls(this.camera, this.canvas, this.renderer.render);
 
-        this.datGui = new DatGUI(
-            this.scene,
-            this.renderer,
-            this.camera,
-            this.nodes,
-            this.edges,
-            this.Config,
-            //bloomPassEdges,edgesBloomScene,
-           this.state);
+        if (this.Config.useGuiControl)
+            this.datGui = new DatGUI(
+                this.idCanvasHTML,
+                this.scene,
+                this.renderer,
+                this.camera,
+                this.nodes,
+                this.edges,
+                this.Config,
+                //bloomPassEdges,edgesBloomScene,
+                this.state);
+        if (this.Config.useKeyboard)
+            this.keyboardInteraction = new Keyboard(
+                this.canvas,
+                this.state,
+                this.Config,
+                this.datGui.gui,
+                this.keyboardPressFunction,
+            );
 
-    this.keyboardInteraction = new Keyboard(
-        this.canvas,
-        this.state,
-        this.Config,
-        this.datGui.gui,
-        this.keyboardPressFunction,
-    );
-
+        //{
+            //const color = 0xffffff;
+            //const intensity = 4;
+            //const light = new THREE.DirectionalLight(color, intensity);
+            //light.position.set(-1, 2, 4);
+            //light.layers.enable(0)
+            //this.camera.add(light);
+        //}
     }
     ressetLook(){
         let position = this.edges.instancedEdges.geometry.boundingSphere.center
@@ -94,16 +101,20 @@ export default class Graph {
         this.camera.updateProjectionMatrix();
         this.renderer.render()
     }
+    deleteGraph(){
+        this.nodes.deleteAllNodes()
+        this.edges.deleteAllEdges()
+    }
+    getURI(width, height, transparency){
+        transparency = transparency || false;
+        const uri = this.renderer.getURI(width, height, transparency);
+        this.uri = uri
+    }
+    stopRender(){
+        //this.deleteGraph();
+        this.renderer.stop();
 
+    }
 }
 
-
-    //{
-        //const color = 0xffffff;
-        //const intensity = 4;
-        //const light = new THREE.DirectionalLight(color, intensity);
-        //light.position.set(-1, 2, 4);
-        //light.layers.enable(0)
-        //camera.add(light);
-    //}
 

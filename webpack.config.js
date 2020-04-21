@@ -19,211 +19,232 @@ const files = {
 }
 
 module.exports = env => {
-  // Dev environment
-  let devtool = 'eval';
-  let mode = 'development';
-  let stats = 'minimal';
-  let plugins = [
-    new webpack.DefinePlugin({
-      __ENV__: JSON.stringify(env.NODE_ENV)
-    })
-  ];
+    // Dev environment
+    let devtool = 'eval';
+    let mode = 'development';
+    let stats = 'minimal';
+    let plugins = [
+        new webpack.DefinePlugin({
+            __ENV__: JSON.stringify(env.NODE_ENV)
+        })
+    ];
 
 
 
-  // Prod environment
-  if (env.NODE_ENV === 'prod') {
-    devtool = 'hidden-source-map';
-    mode = 'production';
-    stats = 'none';
-    outputPath = `${__dirname}/build/js`;
-  }
-
-  console.log('Webpack build -');
-  console.log(`    - ENV: ${env.NODE_ENV}`);
-  console.log(`    - outputPath  ${outputPath}`);
-  console.log(`    - includePath ${includePath}`);
-  console.log(`    - nodeModulesPath: ${nodeModulesPath}`);
-
-
-  const compilerWebClientJs ={
-    name: "webClientJs",
-    entry: [
-      entry,
-    ],
-    output: {
-      path: outputPath,
-      publicPath: 'js',
-      filename: 'app.js'
-    },
-    mode,
-    module: {
-      rules: [
-        {
-          test: /\.js?$/,
-          use: {
-            loader: 'babel-loader',
-          },
-          include: includePath,
-          exclude: nodeModulesPath,
-        },
-          //{
-              //test: /\.html$/,
-              //////include: path.join(__dirname, 'src/html'),
-              //// use: ['html-loader?interpolate']
-            //use:[
-                ////{
-                    ////loader: 'html-loader',
-                ////},
-            //]
-          //}
-      ]
-    },
-
-    // options for resolving module requests
-    // (does not apply to resolving to loaders)
-    resolve: {
-      // directories where to look for modules,
-      modules: [
-        'node_modules',
-        path.resolve(__dirname, 'src')
-      ],
-
-      extensions: ['.js', '.json'],
-    },
-
-    performance: {
-      hints: 'warning'
-    },
-
-    // lets you precisely control what bundle information gets displayed
-    stats,
-
-    // enhance debugging by adding meta info for the browser devtools
-    // source-map most detailed at the expense of build speed.
-    devtool,
-
-    devServer: {
-      contentBase: 'src/public',
-        open:false,
-    },
-
-    plugins: plugins.concat(
-      new HtmlWebpackPlugin({
-        title: 'Three.js Webpack ES6 Boilerplate',
-        template: path.join(__dirname, 'src/html/index.html'),
-        filename: '../index.html',
-        env: env.NODE_ENV,
-      }),
-    ),
-    optimization: {
-      //minimizer: [
-        //new UglifyJsPlugin({
-          //cache: true,
-          //parallel: true,
-          //sourceMap: true // set to true if you want JS source maps
-        //}),
-        ////new OptimizeCSSAssetsPlugin({})
-      //],
-      runtimeChunk: 'single',
-
-      splitChunks: {
-        cacheGroups: {
-          vendor: {
-            test: /[\\\/]node_modules[\\\/]/,
-            name: 'vendors',
-            chunks: 'all'
-          },
-        }
-      }
+    // Prod environment
+    if (env.NODE_ENV === 'prod') {
+        devtool = 'hidden-source-map';
+        mode = 'production';
+        stats = 'none';
+        outputPath = `${__dirname}/build/js`;
     }
-  };
-  const compilerJupyterClient ={
-    name: "jupyterClient",
-    entry: [
-        './src/js/appJupyter.js',
-    ],
-    output: {
-      path: outputPath,
-      publicPath: 'js',
-      filename: 'appJupyter.js'
-    },
-    mode,
-    module: {
-      rules: [
-        {
-          test: /\.js?$/,
-          use: {
-            loader: 'babel-loader',
-          },
-          include: includePath,
-          exclude: nodeModulesPath,
+
+    console.log('Webpack build -');
+    console.log(`    - ENV: ${env.NODE_ENV}`);
+    console.log(`    - outputPath  ${outputPath}`);
+    console.log(`    - includePath ${includePath}`);
+    console.log(`    - nodeModulesPath: ${nodeModulesPath}`);
+
+
+    const compilerWebClientJs ={
+        name: "webClientJs",
+        entry: [
+            entry,
+        ],
+        output: {
+            path: outputPath,
+            publicPath: 'js',
+            filename: 'app.js'
         },
-          //{
-              //test: /\.html$/,
-              //////include: path.join(__dirname, 'src/html'),
-              //// use: ['html-loader?interpolate']
-            //use:[
+        mode,
+        module: {
+            rules: [
+                {
+                    test: /\.js?$/,
+                    use: {
+                        loader: 'babel-loader',
+                    },
+                    include: includePath,
+                    exclude: nodeModulesPath,
+                },
+                {
+                    test: /\.(vsh|fsh|glsl)$/,
+                    use:{
+                        loader: 'glsl-shader-loader',
+                        options: {}
+                    },
+                    include: includePath,
+                    exclude: nodeModulesPath,
+
+                }
+                //{
+                //test: /\.html$/,
+                //////include: path.join(__dirname, 'src/html'),
+                //// use: ['html-loader?interpolate']
+                //use:[
                 ////{
-                    ////loader: 'html-loader',
+                ////loader: 'html-loader',
                 ////},
-            //]
-          //}
-      ]
-    },
+                //]
+                //}
+            ]
+        },
 
-    // options for resolving module requests
-    // (does not apply to resolving to loaders)
-    resolve: {
-      // directories where to look for modules,
-      modules: [
-        'node_modules',
-        path.resolve(__dirname, 'src')
-      ],
+        // options for resolving module requests
+        // (does not apply to resolving to loaders)
+        resolve: {
+            // directories where to look for modules,
+            modules: [
+                'node_modules',
+                path.resolve(__dirname, 'src')
+            ],
 
-      extensions: ['.js', '.json'],
-    },
+            extensions: ['.js', '.json'],
+        },
 
-    performance: {
-      hints: 'warning'
-    },
+        performance: {
+            hints: 'warning'
+        },
 
-    // lets you precisely control what bundle information gets displayed
-    stats,
+        // lets you precisely control what bundle information gets displayed
+        stats,
 
-    // enhance debugging by adding meta info for the browser devtools
-    // source-map most detailed at the expense of build speed.
-    devtool,
+        // enhance debugging by adding meta info for the browser devtools
+        // source-map most detailed at the expense of build speed.
+        devtool,
 
-    devServer: {
-      contentBase: 'src/public',
-        open:false,
-        hot:true,
-    },
+        devServer: {
+            contentBase: 'src/public',
+            open:false,
+        },
 
-    optimization: {
-      minimizer: [
-        new UglifyJsPlugin({
-          cache: true,
-          parallel: true,
-          sourceMap: false // set to true if you want JS source maps
-        }),
-        ////new OptimizeCSSAssetsPlugin({})
-      ],
-      runtimeChunk: 'single',
+        plugins: plugins.concat(
+            new HtmlWebpackPlugin({
+                title: 'Three.js Webpack ES6 Boilerplate',
+                template: path.join(__dirname, 'src/html/index.html'),
+                filename: '../index.html',
+                env: env.NODE_ENV,
+            }),
+        ),
+        optimization: {
+            //minimizer: [
+            //new UglifyJsPlugin({
+            //cache: true,
+            //parallel: true,
+            //sourceMap: true // set to true if you want JS source maps
+            //}),
+            ////new OptimizeCSSAssetsPlugin({})
+            //],
+            runtimeChunk: 'single',
 
-      splitChunks: {
-        cacheGroups: {
-          vendor: {
-            test: /[\\\/]node_modules[\\\/]/,
-            name: 'vendors',
-            chunks: 'all'
-          },
+            splitChunks: {
+                cacheGroups: {
+                    vendor: {
+                        test: /[\\\/]node_modules[\\\/]/,
+                        name: 'vendors',
+                        chunks: 'all'
+                    },
+                }
+            }
         }
-      }
+    };
+    const compilerJupyterClient ={
+        name: "jupyterClient",
+        entry: [
+            './src/js/appJupyter.js',
+        ],
+        output: {
+            path: outputPath,
+            publicPath: 'js',
+            filename: 'appJupyter.js'
+        },
+        //mode,
+        mode:    'production',
+        module: {
+            rules: [
+                {
+                    test: /\.js?$/,
+                    use: {
+                        loader: 'babel-loader',
+                    },
+                    include: includePath,
+                    exclude: nodeModulesPath,
+                },
+                {
+                    test: /\.(vsh|fsh|glsl)$/,
+                    use:{
+                        loader: 'glsl-shader-loader',
+                        options: {}
+                    },
+                    include: includePath,
+                    exclude: nodeModulesPath,
 
-    }
-  };
+                },
+                //{
+                //test: /\.html$/,
+                //////include: path.join(__dirname, 'src/html'),
+                //// use: ['html-loader?interpolate']
+                //use:[
+                ////{
+                ////loader: 'html-loader',
+                ////},
+                //]
+                //}
+            ]
+        },
+
+        // options for resolving module requests
+        // (does not apply to resolving to loaders)
+        resolve: {
+            // directories where to look for modules,
+            modules: [
+                'node_modules',
+                path.resolve(__dirname, 'src')
+            ],
+
+            extensions: ['.js', '.json'],
+        },
+
+        performance: {
+            hints: 'warning'
+        },
+
+        // lets you precisely control what bundle information gets displayed
+        stats,
+
+        // enhance debugging by adding meta info for the browser devtools
+        // source-map most detailed at the expense of build speed.
+        devtool,
+
+        devServer: {
+            contentBase: 'src/public',
+            open:false,
+            hot:true,
+        },
+
+        optimization: {
+            //minimizer: [
+            //new UglifyJsPlugin({
+            //cache: false,
+            //parallel: true,
+            //sourceMap: false // set to true if you want JS source maps
+            //}),
+            //////new OptimizeCSSAssetsPlugin({})
+            //],
+            //runtimeChunk: 'single',
+
+            //splitChunks: {
+            //cacheGroups: {
+            //vendor: {
+            //test: /[\\\/]node_modules[\\\/]/,
+            //name: 'vendors',
+            //chunks: 'all'
+            //},
+            //}
+            //}
+
+        }
+    };
 
     return [
         compilerWebClientJs,

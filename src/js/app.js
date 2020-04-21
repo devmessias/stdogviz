@@ -3,8 +3,16 @@ import Graph from './graph/main';
 import Config from './data/config';
 import DataPool from "./connections/dataPool";
 
+
+if(__ENV__ === 'dev') {
+  console.info('----- RUNNING IN DEV ENVIRONMENT! -----');
+  Config.isDev = true;
+}
+
+
 function keyboardPressFunction(key, action) {
         switch (action) {
+
             case "deleteNode":
                 //let pickedObjectsNames = cameraObj.pickedObjects;
                 //if (pickedObjectsNames.length>0) {
@@ -89,9 +97,9 @@ function listenerFunction(event) {
 
 }
 
-
+Config.useGuiControl = true;
 const graphObj = new Graph(
-    "appContainer",
+    "graphCanvas",
     Config,
     keyboardPressFunction
 )

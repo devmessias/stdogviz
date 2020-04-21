@@ -1,1 +1,0 @@
-window.testando = '666';

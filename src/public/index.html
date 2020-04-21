@@ -21,10 +21,109 @@ rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/boots
    margin: 0;
    height: 100%;
 }
-#appContainer {
+#graphCanvas {
    width: 100vw;
    height: 100vh;
    display: block;
+   z-index:-1;
+}
+#containergraphCanvas{
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display:block;
+}
+
+#datGuigraphCanvas{
+
+}
+
+    .alarm{
+  color: #b70000;
+  text-shadow: 0 0 0 #b70000,
+  0 0 1px #fff,
+  0 0 1px #fff,
+  0 0 2px #fff,
+  0 0 2px #fff,
+  0 0 3px #fff,
+  0 0 3px #fff,
+  0 0 4px #fff,
+  0 0 4px #fff;
+}
+
+.rs-base{
+  position: absolute;
+  z-index: 10000;
+  padding: 10px;
+  background-color: #222;
+  font-size: 10px;
+  line-height: 1.2em;
+  width: 350px;
+  font-family: 'Roboto Condensed', tahoma, sans-serif;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+}
+
+.rs-base h1{
+  margin: 0;
+  padding: 0;
+  font-size: 1.4em;
+  color: #fff;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.rs-base div.rs-group{
+  margin-bottom: 10px;
+}
+
+.rs-base div.rs-group.hidden{
+  display: none;
+}
+
+.rs-base div.rs-fraction{
+  position: relative;
+  margin-bottom: 5px;
+}
+
+.rs-base div.rs-fraction p{
+  width: 120px;
+  text-align: right;
+  margin: 0;
+  padding: 0;
+}
+
+.rs-base div.rs-legend{
+  position: absolute;
+  line-height: 1em;
+}
+
+.rs-base div.rs-counter-base{
+  position: relative;
+  margin: 2px 0;
+  height: 1em;
+  color: white;
+}
+
+.rs-base span.rs-counter-id{
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.rs-base div.rs-counter-value{
+  position: absolute;
+  left: 90px;
+  width: 30px;
+  height: 1em;
+  top: 0;
+  text-align: right;
+}
+
+.rs-base canvas.rs-canvas{
+  position: absolute;
+  right: 0;
 }
 
 </style>
@@ -33,9 +132,15 @@ rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/boots
   </head>
 
   <body>
-    <canvas 
-        id="appContainer" >
-    </canvas>
+      <div id="containergraphCanvas">
+          <canvas 
+           id="graphCanvas" >
+          </canvas>
+            <div 
+                style="position:absolute;top:0px;right:0px;z-index:1;"
+                id="datGuigraphCanvas">
+            </div>
+        </div>
 
     
 <div class="modal fade" id="saveImageModal" tabindex="-1" role="dialog" aria-labelledby="saveImageModalLabel" aria-hidden="true">

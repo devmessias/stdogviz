@@ -16,14 +16,19 @@ function updateDropdown(target, list){
 // Manages all dat.GUI interactions
 export default class DatGUI {
     constructor(
+        idCanvasHTML,
         scene, renderer,
         camera,
         nodes0, edges0,
         Config,
         appState) {
-        const gui = new dat.GUI();
+        const gui = new dat.GUI({autoPlace:false, name:idCanvasHTML});
         this.gui = gui
 
+        //container.appendChild(gui.domElement);
+        document.getElementById(`datGui${idCanvasHTML}`).appendChild(gui.domElement);
+        const render = renderer.render;
+        //canvas.appendChild(gui.domElement);
         //this.camera = main.camera.threeCamera;
         //this.controls = main.controls.threeControls;
         //this.light = main.light;
@@ -31,11 +36,12 @@ export default class DatGUI {
         /* Scene */
         let sceneFolder = gui.addFolder('Scene');
 
-        //sceneFolder.addColor(Config.scene, "color").name('Color').onChange((color) => {
-            //scene.background = new THREE.Color(color)
-            //render()
-        //});
+        sceneFolder.addColor(Config.scene, "color").name('Color').onChange((color) => {
+            scene.background = new THREE.Color(color)
+            render()
+        });
 
+        sceneFolder.open()
         /* Nodes */
         let nodesFolder = gui.addFolder('Nodes');
 
@@ -48,12 +54,12 @@ export default class DatGUI {
             render();
         } );
 
-        let nodesGuiRadius = nodesFolder.add(Config.nodes, 'radius', 0, 3).name('Radius');
+        let nodesGuiRadius = nodesFolder.add(Config.nodes, 'radius', 0, 3, 0.1).name('Radius');
         nodesFolder.addColor(Config.nodes, "color").name('Color').onChange((color) => {
             nodes0.changeColor(color)
             render()
         });
-        nodesFolder.add(Config.nodes, 'scale', 0.01, 5).name('Scale').onChange((value) => {
+        nodesFolder.add(Config.nodes, 'scale', 1, 5, 0.1).name('Scale').onChange((value) => {
             nodes0.changeScale(value)
             //node.material.opacity=value;
         });
@@ -167,7 +173,7 @@ export default class DatGUI {
         //this.controls.enableRotate = true;
         //});
 
-
+        renderer.updateSize();
         /* Mesh */
 
     }
