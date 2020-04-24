@@ -112,6 +112,16 @@ export default class Nodes {
         this.instancedNodes.material.needsUpdate = true;
 
     }
+    changeEdgeColor(color){
+        this.uniforms.edgeColor.value = new THREE.Color(color);
+        this.instancedNodes.material.needsUpdate = true;
+
+    }
+    changeEdgeWidth(value){
+        this.uniforms.edgeWidth.value = value;
+        this.instancedNodes.geometry.needsUpdate = true;
+    }
+
     changeOpacity(value){
         this.uniforms.bufferOpacity.value = value;
         this.instancedNodes.material.needsUpdate = true;
@@ -207,6 +217,11 @@ export default class Nodes {
                 type: 'f',
                 value: 0,
             }
+            this.uniforms.edgeColor = {
+                type: 'vec3',
+                value: new Float32Array([0.8, 0.8, 0.8])
+            }
+
 
             //instancedGeometry = instancedGeometry.copy(circleGeometry);
             material = new THREE.RawShaderMaterial( {
@@ -227,10 +242,20 @@ export default class Nodes {
             let availableSymbols = ['o', 's', 'd', '^', 'p', 'h', 's6', '+', 'x']
             const randomChoice = (arr) => arr[Math.floor(arr.length * Math.random())];
             let symbol = randomChoice(availableSymbols);
+            symbol = 'x'
             let markerGeometry = new  THREE.PlaneBufferGeometry(1, 1, 1)
             //let circleGeometry = new  THREE.CircleBufferGeometry(1, 6)
             instancedGeometry.index = markerGeometry.index;
             instancedGeometry.attributes = markerGeometry.attributes;
+
+            this.uniforms.edgeColor = {
+                type: 'vec3',
+                value: new THREE.Color(Config.nodes.edgeColor),
+            }
+            this.uniforms.edgeWidth = {
+                type: 'f',
+                value: 0.1,
+            }
             material = new THREE.RawShaderMaterial( {
                 vertexShader: getMarkerVertexShader(fixedNodeSize, fixedColor),
                 fragmentShader: getMarkerFragmentShader(symbol),

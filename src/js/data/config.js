@@ -50,6 +50,8 @@ export default {
         show: true,
         radius: .5,
         color: 0x0000ff,
+        edgeColor: 0x0000ff,
+        edgeWidth: 0.1,
         roughness: 0.5,
         opacity: 1,
 

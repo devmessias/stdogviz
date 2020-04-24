@@ -1,13 +1,18 @@
 
 const distFunctions = {
     'o': `
+        edgeWidth = edgeWidth/2.;
         sdf = -length(p) + s;
     `,
     's': `
+
+        edgeWidth = edgeWidth/2.;
         vec2 d = abs(p) - vec2(s, s);
         sdf = -length(max(d,0.0)) - min(max(d.x,d.y),0.0);
     `,
     'd':`
+
+        edgeWidth = edgeWidth/4.;
         vec2 b  = vec2(s, s/2.0);
         vec2 q = abs(p);
         float h = clamp((-2.0*ndot(q,b)+ndot(b,b))/dot(b,b),-1.0,1.0);
@@ -24,6 +29,7 @@ const distFunctions = {
         sdf = length(p)*sign(p.y);
     `,
     'p':`
+        edgeWidth = edgeWidth/4.;
         float r = s/2.0;
         const vec3 k = vec3(0.809016994,0.587785252,0.726542528);
         p.x = abs(p.x);
@@ -33,6 +39,9 @@ const distFunctions = {
         sdf = -length(p)*sign(p.y);
     `,
     'h':`
+
+        edgeWidth = edgeWidth/4.;
+
         float r = s/2.0;
         const vec3 k = vec3(-0.866025404,0.5,0.577350269);
         p = abs(p);
@@ -41,6 +50,8 @@ const distFunctions = {
         sdf = -length(p)*sign(p.y);
     `,
     's6':`
+
+        edgeWidth = edgeWidth/4.;
         float r = s/2.0;
         const vec4 k = vec4(-0.5,0.8660254038,0.5773502692,1.7320508076);
         p = abs(p);
@@ -50,12 +61,16 @@ const distFunctions = {
         sdf = -length(p)*sign(p.y);
     `,
     'x':`
+
+        edgeWidth = edgeWidth/8.;
         float r = s/4.0;
         float w = 0.5;
         p = abs(p);
         sdf = -length(p-min(p.x+p.y,w)*0.5) + r;
     `,
     '+':`
+
+        edgeWidth = edgeWidth/4.;
         float r = s/15.0; //corner radius
         vec2 b = vec2(s/1.0, s/3.0); //base , size
         //vec2 b = vec2(r, r);
@@ -75,7 +90,9 @@ export function getMarkerFragmentShader(symbol){
 
     varying vec3 vColor;
     varying float vOpacity;
+    varying float vEdgeWidth;
     varying vec3 vPos;
+    varying vec3 vEdgeColor;
 
     float ndot(vec2 a, vec2 b ) {
         return a.x*b.x - a.y*b.y;
@@ -83,6 +100,8 @@ export function getMarkerFragmentShader(symbol){
     void main() {
 
         vec3 color = vColor;
+        vec3 edgeColor = vEdgeColor;
+        float edgeWidth = vEdgeWidth;
         vec2 p = vPos.xy;
         float opacity = vOpacity;
 
@@ -93,13 +112,12 @@ export function getMarkerFragmentShader(symbol){
         float edge1 = 1.0;
         opacity = 1.0;
         float opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), 0.0, opacity)+0.5;
-        //float opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), opacity/4.0, opacity);
         vec4 rgba = vec4(  color, opacity2 );
-        //vec4 rgba = vec4(  color, 1 );
-        //if (sdf < 0.1 && sdf > 0.05)  rgba  = vec4(0., 0., 0., opacity);
-        if (sdf < 0.1)  rgba  = vec4(0., 0., 0., opacity2);
-        //if (sdf <= 0.05)  rgba  = vec4(0., 0., 0., opacity2);
-        //if (sdf < 0.1) rgba  = vec4(color, opacity);
+
+        if (edgeWidth > 0.0){
+            if (sdf < edgeWidth)  rgba  = vec4(edgeColor, opacity2);
+        }
+
         gl_FragColor = rgba;
 
         if (sdf<0.0) discard;

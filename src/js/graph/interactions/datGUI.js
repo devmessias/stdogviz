@@ -63,6 +63,15 @@ export default class DatGUI {
             nodes0.changeScale(value)
             //node.material.opacity=value;
         });
+        nodesFolder.addColor(Config.nodes, "edgeColor").name('Edge Color').onChange((color) => {
+            nodes0.changeEdgeColor(color)
+            render()
+        });
+        nodesFolder.add(Config.nodes, 'edgeWidth', 0.0, 1, 0.01).name('Edge Width').onChange((value) => {
+            nodes0.changeEdgeWidth(value)
+            render()
+            //node.material.opacity=value;
+        });
         nodesFolder.add(Config.nodes, 'opacity', 0, 1).name('Opacity').onChange((value) => {
             nodes0.changeOpacity(value)
             //node.material.opacity=value;

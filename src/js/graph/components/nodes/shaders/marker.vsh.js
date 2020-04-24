@@ -28,18 +28,21 @@ export function getMarkerVertexShader(fixedNodeSize=false, fixedColor=false){
         markerVertexShader += 'attribute vec3 bufferColors;'
     }
 
-
     markerVertexShader += `
 
     uniform float bufferOpacity;
     uniform float bufferNodeScale;
     uniform float useDiffuse2Shadow;
+    uniform float edgeWidth;
+    uniform vec3 edgeColor;
 
     varying vec3 vColor;
+    varying vec3 vEdgeColor;
     varying vec3 vPos;
     varying vec2 vUv;
     varying float vUseDiffuse2Shadow;
     varying float vOpacity;
+    varying float vEdgeWidth;
 
     void main() {
 
@@ -56,6 +59,8 @@ export function getMarkerVertexShader(fixedNodeSize=false, fixedColor=false){
         vUseDiffuse2Shadow = useDiffuse2Shadow;
         vec4 vPos2 = viewMatrix*vec4(bufferNodePositions, 1.0);
         vPos = position;
+        vEdgeWidth = edgeWidth;
+        vEdgeColor = edgeColor;
     }
 
     `
