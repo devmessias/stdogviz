@@ -61,21 +61,35 @@ function listenerFunction(event) {
             //graphObj.state.defaultProps = message.defaultProps
             //
             graphObj.edges.createEdges(message.nodes, message.edges, message.defaultProps);
-            graphObj.nodes.createNodes(message.nodes, message.defaultProps);
+            graphObj.nodes.createNodes(message.nodes, true);
             if(graphObj.state.firstLoad){
                 graphObj.firstLoad = false;
                 graphObj.ressetLook();
                 clearInterval(intervalGetGraph)
             }
+            let nodes = JSON.parse(JSON.stringify(message.nodes))
+            nodes.pos = nodes.pos.map((p)=>p*0.3);
+            graphObj.nodes.createNodes(nodes, false);
             //
             //camera.position.set(0, nodes0.max_vals[2] * (1 + 2), 0);
-            //datGui.updateNodeColorProp(message.nodes.props)
+            graphObj.datGui.updateNodeColorProp(message.nodes.props)
+            graphObj.datGui.updateComunityField(Object.keys(graphObj.nodes.nodesGroup));
             //datGui.updateEdgeColorProp(message.edges.props)
             //camera.lookAt(nodes0.instancedNodes);
 
 
             break;
 
+        case "addNodes":
+            graphObj.nodes.createNodes(message.nodes, false);
+            if(graphObj.state.firstLoad){
+                graphObj.firstLoad = false;
+                graphObj.ressetLook();
+                clearInterval(intervalGetGraph)
+            }
+
+
+            break;
         case "deleteNodes":
             //message.info.nodesId.map(nodeId=>nodes0.deleteNode(nodeId));
             //message.info.edgesName.map(edgeName=>edges0.deleteEdge(edgeName));

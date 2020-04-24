@@ -44,7 +44,11 @@ export default class DatGUI {
         sceneFolder.open()
         /* Nodes */
         let nodesFolder = gui.addFolder('Nodes');
-
+        this.comunityField = nodesFolder.add(appState, "comunityField", appState.comunityField)
+            .name("Comunity")
+            .onChange(function(value) {
+            nodes0.setComunity(value)
+        });
         nodesFolder.add( Config.nodes, 'show' ).onChange( function ( value ) {
             for (let [nodeName, node] of Object.entries(nodes0.nodes)){
                 node.visible=value;
@@ -54,10 +58,14 @@ export default class DatGUI {
             render();
         } );
 
-        let nodesGuiRadius = nodesFolder.add(Config.nodes, 'radius', 0, 3, 0.1).name('Radius');
         nodesFolder.addColor(Config.nodes, "color").name('Color').onChange((color) => {
             nodes0.changeColor(color)
             render()
+        });
+        this.sizeField = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
+            .name("Size Field")
+            .onChange(function(value) {
+            nodes0.sizeByField(value)
         });
         nodesFolder.add(Config.nodes, 'scale', 1, 10, 0.1).name('Scale').onChange((value) => {
             nodes0.changeScale(value)
@@ -78,12 +86,12 @@ export default class DatGUI {
         });
 
         this.colorProp = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
-            .name("Color by Prop.")
+            .name("Color by Attr.")
             .onChange(function(value) {
             nodes0.colorByProp(value)
         });
         this.colorField = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
-            .name("Color by Field.")
+            .name("Color Field")
             .onChange(function(value) {
             nodes0.colorByField(value)
         });
@@ -186,13 +194,19 @@ export default class DatGUI {
         /* Mesh */
 
     }
+    updateComunityField(values){
+        values.unshift('');
+        updateDropdown(this.comunityField , values);
+    }
     updateNodeColorProp(values){
-
+        values.unshift('');
+        values = values.filter(v=> v != 'pos')
         updateDropdown(this.colorField , values);
         updateDropdown(this.colorProp , values);
+        updateDropdown(this.sizeField , values.filter(v=> v!='color'));
     }
     updateEdgeColorProp(values){
-
+        values.unshift('');
         updateDropdown(this.colorEdgeField , values);
         updateDropdown(this.colorEdgeProp , values);
     }

@@ -57,6 +57,7 @@ export default class Graph {
             defaultProps: {},
             stopChanges: false,
             renders: [],
+            comunityField:{},
             rendering: false,
             defaultProps: {}
         }

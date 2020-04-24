@@ -18,7 +18,6 @@ export function getMarkerVertexShader(fixedNodeSize=false, fixedColor=false){
     if (fixedNodeSize){
         markerVertexShader += 'uniform float bufferNodeSize;'
     }else{
-
         markerVertexShader += 'attribute float bufferNodeSize;'
     }
     if (fixedColor){

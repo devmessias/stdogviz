@@ -1,18 +1,62 @@
+//const sdfFunctions = `
+//vec3 sdfCircle(vec2 p, float s){
+    //float edgeWidth = 1/2.;
+    //float minSdf = 0.5;
+    //float sdf = -length(p) + s;
+    //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//vec3 sdfSquare(vec2 p, float s){
+ //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//vec3 sdfDiamond(vec2 p, float s){
+ //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//vec3 sdfTriangle(vec2 p, float s){
+ //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//vec3 sdfPentagon(vec2 p, float s){
+ //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//vec3 sdfHexagon(vec2 p, float s){
+ //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//vec3 sdfS6(vec2 p, float s){
+ //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//vec3 sdfProduct(vec2 p, float s){
+ //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//vec3 sdfCross(vec2 p, float s){
+ //return vec3(sdf, minSdf, edgeWidth);
+//}
+
+//`
 
 const distFunctions = {
     'o': `
         edgeWidth = edgeWidth/2.;
+        float minSdf = 0.5;
         sdf = -length(p) + s;
     `,
     's': `
 
         edgeWidth = edgeWidth/2.;
+        float minSdf = 0.5/2.0;
         vec2 d = abs(p) - vec2(s, s);
         sdf = -length(max(d,0.0)) - min(max(d.x,d.y),0.0);
     `,
     'd':`
 
         edgeWidth = edgeWidth/4.;
+        float minSdf = 0.5/2.0;
         vec2 b  = vec2(s, s/2.0);
         vec2 q = abs(p);
         float h = clamp((-2.0*ndot(q,b)+ndot(b,b))/dot(b,b),-1.0,1.0);
@@ -21,6 +65,7 @@ const distFunctions = {
     `,
     '^':`
         float l = s/1.5;
+        float minSdf = 1000.0;
         float k = sqrt(3.0);
         p.x = abs(p.x) - l;
         p.y = p.y + l/k;
@@ -30,6 +75,8 @@ const distFunctions = {
     `,
     'p':`
         edgeWidth = edgeWidth/4.;
+        float minSdf = 0.5/2.0;
+        float k = sqrt(3.0);
         float r = s/2.0;
         const vec3 k = vec3(0.809016994,0.587785252,0.726542528);
         p.x = abs(p.x);
@@ -41,7 +88,7 @@ const distFunctions = {
     'h':`
 
         edgeWidth = edgeWidth/4.;
-
+        float minSdf = 0.5/2.0;
         float r = s/2.0;
         const vec3 k = vec3(-0.866025404,0.5,0.577350269);
         p = abs(p);
@@ -51,6 +98,7 @@ const distFunctions = {
     `,
     's6':`
 
+        float minSdf = 0.5/2.0;
         edgeWidth = edgeWidth/4.;
         float r = s/2.0;
         const vec4 k = vec4(-0.5,0.8660254038,0.5773502692,1.7320508076);
@@ -63,6 +111,8 @@ const distFunctions = {
     'x':`
 
         edgeWidth = edgeWidth/8.;
+        float minSdf = 0.5/4.0;
+
         float r = s/4.0;
         float w = 0.5;
         p = abs(p);
@@ -71,6 +121,8 @@ const distFunctions = {
     '+':`
 
         edgeWidth = edgeWidth/4.;
+
+        float minSdf = 0.5/2.0;
         float r = s/15.0; //corner radius
         vec2 b = vec2(s/1.0, s/3.0); //base , size
         //vec2 b = vec2(r, r);
@@ -83,7 +135,7 @@ const distFunctions = {
 
 }
 
-export function getMarkerFragmentShader(symbol){
+export function getMarkerFragmentShader(marker){
     return  `
     precision highp float;
     #define SHADER_NAME MarkerNode
@@ -107,11 +159,11 @@ export function getMarkerFragmentShader(symbol){
 
         float s = 0.5;
         float sdf = 0.0;
-        ${distFunctions[symbol]}
+        ${distFunctions[marker]}
         float edge0 = 0.0;
-        float edge1 = 1.0;
-        opacity = 1.0;
-        float opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), 0.0, opacity)+0.5;
+        float edge1 = minSdf;
+        float opacity2 = opacity;
+        if (opacity<1.0) opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), 0.01, opacity);
         vec4 rgba = vec4(  color, opacity2 );
 
         if (edgeWidth > 0.0){
@@ -124,3 +176,5 @@ export function getMarkerFragmentShader(symbol){
     }
     `
 }
+
+export const availableMarkers = ['o', 's', 'd', '^', 'p', 'h', 's6', '+', 'x'];
