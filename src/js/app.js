@@ -59,8 +59,9 @@ function listenerFunction(event) {
         case "getGraph":
             clearInterval(intervalGetGraph);
             //graphObj.state.defaultProps = message.defaultProps
-            graphObj.nodes.createNodes(message.nodes, message.defaultProps);
+            //
             graphObj.edges.createEdges(message.nodes, message.edges, message.defaultProps);
+            graphObj.nodes.createNodes(message.nodes, message.defaultProps);
             if(graphObj.state.firstLoad){
                 graphObj.firstLoad = false;
                 graphObj.ressetLook();

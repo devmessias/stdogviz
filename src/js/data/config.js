@@ -2,14 +2,15 @@
 export default {
     address: "127.0.0.1:6688" ,
     scene: {
-        color: 0xe9e9ff
+        //color: 0xe9e9ff
+        color: 0xffffff
     },
     isDev: true,
     render:{
         antialias: true,
     },
     isShowingStats: true,
-    useStats: false,
+    useStats: true,
     useGuiControl: false,
     useKeyboard: true,
     isLoaded: false,
@@ -55,7 +56,8 @@ export default {
     },
     edges: {
         show: true,
-        color: 0x0000ff,
+        color: 0xff,
+        //color: 0x0000ff,
         roughness: 0.5,
         opacity: 1,
 

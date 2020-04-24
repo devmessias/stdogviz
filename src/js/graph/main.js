@@ -1,11 +1,14 @@
 // Global imports -
 import * as THREE from "three";
+//import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
+
 import alertify  from "alertifyjs"
 
 // Components
 import Renderer from "./components/renderer/main";
 //import PickCamera from "./components/pick";
-import Controls from "./components/controls";
 import Nodes from "./components/nodes/main";
 import Edges from "./components/edges/main";
 
@@ -14,21 +17,29 @@ import Edges from "./components/edges/main";
 import Keyboard from "./interactions/keyboard";
 import DatGUI from './interactions/datGUI';
 
-
 export default class Graph {
     constructor(
         idCanvasHTML,
         Config,
-        keyboardPressFunction
+        keyboardPressFunction,
+        use2d=false,
     ) {
 
 
         this.Config = Config
+        this.use2d = use2d;
         this.idCanvasHTML = idCanvasHTML
         this.canvas = document.getElementById(`${idCanvasHTML}`);
         this.container = document.getElementById(`container${idCanvasHTML}`);
-        this.camera = new THREE.PerspectiveCamera(
-            Config.camera.fov, Config.camera.aspect, Config.camera.near, Config.camera.far);
+        if(use2d){
+            this.camera = new THREE.OrthographicCamera(
+                2, -2, 2, -2, Config.camera.near, Config.camera.far);
+
+        }else{
+            this.camera = new THREE.PerspectiveCamera(
+                Config.camera.fov, Config.camera.aspect, Config.camera.near, Config.camera.far);
+        }
+
         this.scene = new THREE.Scene();
 
         this.renderer;
@@ -61,9 +72,23 @@ export default class Graph {
         this.nodes = new Nodes(this.scene, 0, 0);
         this.edges = new Edges(this.scene, 0, 1);
 
-        this.renderer = new Renderer(this.scene,this.container, this.canvas, this.camera, this.state);
 
-        this.controls = new Controls(this.camera, this.canvas, this.renderer.render);
+        this.controls = new OrbitControls(this.camera, this.canvas);
+
+        this.controls.target.set(0, 0, 0);
+        this.controls.enableKeys=true;
+        this.controls.screenSpacePanning = true;
+        //this.controls.update();
+
+        if(this.use2d){
+
+            this.controls.enableRotate=false;
+            //this.controls.maxPolarAngle = 0; // radians
+            //this.controls.minAzimuthAngle = - 0; // radians
+            //this.controls.maxAzimuthAngle = 0; // radians
+
+        }
+        this.renderer = new Renderer(this.scene, this.controls, this.container, this.canvas, this.camera, this.state);
 
         if (this.Config.useGuiControl)
             this.datGui = new DatGUI(

@@ -59,7 +59,7 @@ export default class DatGUI {
             nodes0.changeColor(color)
             render()
         });
-        nodesFolder.add(Config.nodes, 'scale', 1, 5, 0.1).name('Scale').onChange((value) => {
+        nodesFolder.add(Config.nodes, 'scale', 1, 10, 0.1).name('Scale').onChange((value) => {
             nodes0.changeScale(value)
             //node.material.opacity=value;
         });

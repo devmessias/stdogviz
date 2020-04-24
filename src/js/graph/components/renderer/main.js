@@ -1,4 +1,11 @@
 import * as THREE from 'three';
+
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { CopyShader } from 'three/examples/jsm/shaders/CopyShader.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
+
 import alertify from 'alertifyjs';
 
 import Config from '../../../data/config';
@@ -39,8 +46,9 @@ function defaultFileName (ext) {
 
 
 export default class Renderer {
-    constructor(scene, container, canvas, camera, appState ) {
+    constructor(scene, controls, container, canvas, camera, appState ) {
         this.scene = scene;
+        this.controls = controls;
         this.canvas = canvas;
         this.container = container;
         this.camera = camera
@@ -53,11 +61,11 @@ export default class Renderer {
             {
                 canvas: canvas,
                 antialias: Config.render.antialias,
-                //preserveDrawingBuffer: true,
-                //alpha:true
+                preserveDrawingBuffer: true,
+                alpha:true
             }
         );
-
+	    this.renderer.autoClear = false;
         if(Config.useStats) {
             this.stats = new Stats(this.renderer);
             this.stats.setUp();
@@ -74,11 +82,33 @@ export default class Renderer {
         Config.maxAnisotropy = this.renderer.getMaxAnisotropy();
 
         // Initial size update set to canvas canvas
+        //
+
+        let fxaaPass = new ShaderPass( FXAAShader );
+
+        var pixelRatio = this.renderer.getPixelRatio();
+
+        var renderPass = new RenderPass( scene, camera );
+        fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( this.canvas.offsetWidth * pixelRatio );
+        fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( this.canvas.offsetHeight * pixelRatio );
+        //fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / 1000000;
+        //fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / 1000000;
+
+        this.fxaaPass = fxaaPass
+
+        this.composer = new EffectComposer( this.renderer );
+        this.composer.addPass( renderPass );
+        this.composer.addPass( fxaaPass );
+
+        //
+
+
         this.updateSize(this.canvas.offsetWidth,this.canvas.offsetHeight);
         // Listeners
         document.addEventListener('DOMContentLoaded', () => this.updateSize(), false);
         window.addEventListener('resize', () => this.updateSize(), false);
 
+        this.controls.addEventListener('change', ()=>this.render());
         this.render = this.render.bind(this)
         this.updateSize = this.updateSize.bind(this)
 
@@ -88,33 +118,45 @@ export default class Renderer {
             btnSave.addEventListener("click",  event=>this.takeScreenshot())
 
 
+        var renderPass = new RenderPass( scene, camera );
+
+
     }
 
-    setCameraAspect(widthRender, heightRender) {
+    setCameraAspect(widthRender, heightRender, keepPos=true) {
 
         const canvas = this.canvas;
         //const widthRender = window.innerWidth
         //const heightRender = window.innerHeight
-        const aspect = widthRender / heightRender
-        const change = this.appState.originalAspect/aspect
+        //
+        if(keepPos){
+            const aspect = widthRender / heightRender
+            const change = this.appState.originalAspect/aspect
 
-        const newSize = 1 * change;
-        this.camera.left = -aspect * newSize / 2;
-        this.camera.right = aspect * newSize  / 2;
-        this.camera.top = newSize / 2;
-        this.camera.bottom = -newSize / 2;
-
+            const newSize = 1 * change;
+            this.camera.left = -aspect * newSize / 2;
+            this.camera.right = aspect * newSize  / 2;
+            this.camera.top = newSize / 2;
+            this.camera.bottom = -newSize / 2;
+        }
         this.camera.aspect = widthRender / heightRender;
 
         this.camera.updateProjectionMatrix();
     }
 
-    updateSize(widthRender, heightRender) { //if (this.appState.takingScreenshot) return;
+    updateSize(widthRender, heightRender, keepPos=true) { //if (this.appState.takingScreenshot) return;
         widthRender = widthRender || this.container.clientWidth
         heightRender= heightRender ||this.container.clientHeight
 
-        this.setCameraAspect(widthRender, heightRender)
+        this.setCameraAspect(widthRender, heightRender, keepPos)
         this.renderer.setSize(widthRender, heightRender, );
+
+        this.composer.setSize( widthRender, heightRender );
+
+        var pixelRatio = this.renderer.getPixelRatio();
+
+        this.fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( widthRender * pixelRatio );
+        this.fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( heightRender * pixelRatio );
         //this.appState.originalAspect  = aspect
         this.render()
         //const pixelRatio = window.devicePixelRatio;
@@ -147,10 +189,13 @@ export default class Renderer {
     render() {
         // Renders scene to canvas target
         // this.pickHelper.pick( scene, camera, 0)
+
         if(Config.useStats)
             Stats.start();
 
-        this.renderer.render(this.scene, this.camera);
+        //this.controls.update();
+        //this.renderer.render(this.scene, this.camera);
+        this.composer.render();
         if(Config.useStats)
             Stats.end();
 
@@ -174,7 +219,7 @@ export default class Renderer {
         heightImage= heightImage ||this.container.clientHeight
 
 
-        this.setCameraAspect(widthImage, heightImage)
+        this.setCameraAspect(widthImage, heightImage, false)
         // set camera and renderer to desired screenshot dimension
         //this.camera.aspect = widthImage / heightImage;
         //this.camera.updateProjectionMatrix();

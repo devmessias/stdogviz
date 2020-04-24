@@ -97,7 +97,12 @@ export default class Edges {
         let r = 800
         let color;
 
-        const f = (arr, index) => arr.push(...[0, 1, 2].map((i)=>nodesData.pos[index*3+i]))
+        const f = (arr, index) => arr.push(...[0, 1, 2].map((i)=>{
+            let pos = nodesData.pos[index*3+i]
+            if(i==2)
+                pos = pos-0.01
+            return pos
+        }))
         for (let [s, t] of edgesData.nodes) {
 
             //let geometry = new THREE.Geometry();
@@ -114,13 +119,12 @@ export default class Edges {
             //[x, y, z] = nodesData.pos[s]
             //positions.push( x, y, z );
 
-            colors.push(0);
-            colors.push(0 );
-            colors.push(1 );
-
-            colors.push(0);
-            colors.push(0);
-            colors.push(1 );
+            colors.push(0.8);
+            colors.push(0.8);
+            colors.push(0.8);
+            colors.push(0.8);
+            colors.push(0.8);
+            colors.push(0.8);
 
 
 
@@ -146,7 +150,11 @@ export default class Edges {
         this.numEdges = this.edgesData.nodes.length
         this.createVertices(nodesData, edgesData)
         var geometry = new THREE.BufferGeometry();
-        var material = new THREE.LineBasicMaterial( { vertexColors: true, transparent:true, opacity:0.5, linewidth:1 } );
+        var material = new THREE.LineBasicMaterial( {
+            vertexColors: true,
+            //blending: THREE.AdditiveBlending,
+            transparent:true,
+            opacity:0.4, linewidth:1 } );
 
         geometry.setAttribute( "position", new THREE.Float32BufferAttribute( this.positions, 3 ) );
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3 ) );

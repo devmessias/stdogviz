@@ -4,89 +4,15 @@ import alertify  from "alertifyjs"
 
 import Config from "../../../data/config";
 
-//import {markerVertexShader} from "./shaders/marker.vsh";
-//import {markerFragmentShader} from "./shaders/marker.fsh";
+import { getMarkerImgVertexShader} from "./shaders/markerImg.vsh.js";
+import {markerImgFragmentShader} from "./shaders/markerImg.fsh.js";
+
+import {getMarkerVertexShader} from "./shaders/marker.vsh.js";
+import {getMarkerFragmentShader} from "./shaders/marker.fsh.js";
 
 import {fragmentShaderFixedColor, vertexShader, fragmentShader} from "./shaders"
 
-const markerVertexShader = `
-precision highp float;
-uniform mat4 modelViewMatrix;
-uniform mat4 projectionMatrix;
 
-attribute vec3 position;
-attribute vec2 uv;
-
-varying vec2 vUv;
-
-attribute float bufferRadius;
-attribute vec3 bufferNodePositions;
-attribute vec3 bufferColors;
-uniform float bufferOpacity;
-uniform float bufferNodeScale;
-varying vec3 vColor;
-varying float vOpacity;
-
-void main() {
-    //vec3 pos = vec3(0.);
-    //pos = position + bufferNodePositions;
-    //pos *= bufferRadius;
-    //pos *= bufferNodeScale;
-
-    //gl_Position = projectionMatrix* modelViewMatrix * vec4(pos, 1.);
-
-    vec4 mvPosition = modelViewMatrix * vec4( bufferNodePositions, 1.0 );
-    mvPosition.xyz += position;
-    gl_Position = projectionMatrix * mvPosition;
-
-
-
-    vUv = uv;
-
-    vColor = bufferColors;
-    vOpacity = bufferOpacity;
-
-}
-
-`
-
-const markerFragmentShader = `
-precision highp float;
-
-uniform sampler2D map;
-
-varying vec2 vUv;
-
-
-varying vec3 vColor;
-varying float vOpacity;
-
-vec3 HUEtoRGB(float H){
-    H = mod(H,1.0);
-    float R = abs(H * 6.0 - 3.0) - 1.0;
-    float G = 2.0 - abs(H * 6.0 - 2.0);
-    float B = 2.0 - abs(H * 6.0 - 4.0);
-    return clamp(vec3(R,G,B),0.0,1.0);
-}
-
-vec3 HSLtoRGB(vec3 HSL){
-    vec3 RGB = HUEtoRGB(HSL.x);
-    float C = (1.0 - abs(2.0 * HSL.z - 1.0)) * HSL.y;
-    return (RGB - 0.5) * C + HSL.z;
-}
-
-
-void main() {
-
-    vec3 color = vColor;
-    float opacity = vOpacity;
-
-    vec4 diffuseColor = texture2D( map, vUv );
-   gl_FragColor = vec4( diffuseColor.xyz * color, opacity );
-   if ( diffuseColor.w < 0.5 ) discard;
-
-}
-`
 export default class Nodes {
     constructor(scene, layer, bloomLayer) {
 
@@ -215,105 +141,128 @@ export default class Nodes {
         }
     }
     createNodes(nodesData, what="points") {
-
+        console.info("Creating nodes", nodesData)
         what = what || 'points';
         const numNodes = Object.keys(nodesData.id).length
+        const fixedNodeSize = nodesData.props.includes("size2") == false;
+        this.fixedNodeSize = fixedNodeSize;
+        const fixedColor = nodesData.props.includes("color") == false;
+        this.fixedColor = fixedColor;
+
         this.nodesData = nodesData
         this.numNodes = numNodes
 
         this.deleteAllNodes()
 
-        let bufferColors = nodesData.color.flat()
 
         let bufferNodePositions = nodesData.pos
 
-        let bufferRadius = []
-        for (let iNode=0; iNode<numNodes; iNode++){
-            bufferRadius.push(1)
-        }
+
         this.uniforms = {
             bufferOpacity: {
                 type: 'f', // a float
-                value: Config.nodes.opacity
+                value: 1
             },
             bufferNodeScale:{
                 type: 'f',
-                value: Config.nodes.scale
-            }
+                value: 5
+            },
         };
+        let bufferNodeSize;
+        if (fixedNodeSize){
+            console.info("Fixed Node Size")
+            this.uniforms.bufferNodeSize = {
+                type: 'f',
+                value: 1
+            }
+        }
+        if (fixedColor){
+            console.info("Fixed Color")
+            this.uniforms.bufferColors = {
+                type: 'vec3',
+                value: new Float32Array([0.8, 0.0, 0.8])
+            }
+
+        }
+
         let nodesMesh;
 
         let material;
-        const marker = '1'
-        if (marker=="0"){
-            console.info("Nodes rendering points")
-            let instancedGeometry = new THREE.BufferGeometry();
+        const marker = '2'
+        //const markerImg = 'circle';
+        const markerImg = 'ball';
+        //const markerImg = 'disc';
+        //const markerImg = 'spark1';
+        //const markerImg = 'lensflare';
 
-            //let sprite = new THREE.TextureLoader().load( 'textures/sprites/disc.png' );
-            let sprite = new THREE.TextureLoader().load( 'textures/sprites/ball.png' );
-
-            instancedGeometry.setAttribute(
-                'position', new THREE.Float32BufferAttribute( bufferNodePositions, 3 ) );
-
-
-            material = new THREE.PointsMaterial( {
-                size: 15, sizeAttenuation: true, map: sprite, alphaTest: 0.5, transparent: true } );
-            material.color.setHSL( 1.0, 0.3, 0.7 );
-
-            nodesMesh = new THREE.Points( instancedGeometry, material );
-
-        }else{
-
-            let instancedGeometry = new THREE.InstancedBufferGeometry();
-            if (marker=='1'){
-                //
-                let circleGeometry = new  THREE.CircleBufferGeometry(1, 6)
-                instancedGeometry.index = circleGeometry.index;
-                instancedGeometry.attributes = circleGeometry.attributes;
-                this.uniforms.map = { value: new THREE.TextureLoader().load( 'textures/sprites/circle.png' ) }
-                //instancedGeometry = instancedGeometry.copy(circleGeometry);
-                material = new THREE.RawShaderMaterial( {
-                    vertexShader: markerVertexShader,
-                    fragmentShader: markerFragmentShader,
-                    uniforms: this.uniforms,
-                    transparent: true,
-                    //blending: THREE.NormalBlending,
-                    depthTest: true,
-                    depthWrite: true,
-                } );
-
-            }else{
-                console.info('Nodes rendering dummy sphere')
-                let baseGeometry = new  THREE.SphereBufferGeometry(1, 8, 8)
-
-                instancedGeometry = instancedGeometry.copy(baseGeometry);
-
-                instancedGeometry.maxInstancedCount = numNodes
-                material = new THREE.ShaderMaterial({
-                    fragmentShader,
-                    vertexShader,
-                    transparent: true,
-                    blending: THREE.NormalBlending,
-                    uniforms: this.uniforms,
-                });
-
+        let instancedGeometry = new THREE.InstancedBufferGeometry();
+        if (marker=='1'){
+            //
+            let markerGeometry = new  THREE.PlaneBufferGeometry(1, 1, 1)
+            //let circleGeometry = new  THREE.CircleBufferGeometry(1, 6)
+            instancedGeometry.index = markerGeometry.index;
+            instancedGeometry.attributes = markerGeometry.attributes;
+            this.uniforms.map = { value: new THREE.TextureLoader().load( `textures/sprites/${markerImg}.png` ) }
+            this.uniforms.useDiffuse2Shadow = {
+                type: 'f',
+                value: 0,
             }
 
-            instancedGeometry.addAttribute(
-                "bufferRadius",
-                new THREE.InstancedBufferAttribute(new Float32Array(bufferRadius), 1, false)
-            );
-            instancedGeometry.addAttribute("bufferColors",
-                new THREE.InstancedBufferAttribute(new Float32Array(bufferColors), 3, false));
-            instancedGeometry.addAttribute("bufferNodePositions",
-                new THREE.InstancedBufferAttribute(new Float32Array(bufferNodePositions), 3, false)
-            );
+            //instancedGeometry = instancedGeometry.copy(circleGeometry);
+            material = new THREE.RawShaderMaterial( {
+                //vertexShader: markerVertexShader,
+                vertexShader: getMarkerImgVertexShader(fixedNodeSize, fixedColor),
+                fragmentShader: markerImgFragmentShader,
+                uniforms: this.uniforms,
+                transparent: true,
+                //blending: THREE.AdditiveBlending,
+                blending: THREE.NormalBlending,
+                depthTest: true,
+                //depthTest: false,
+                depthWrite: true,
+            } );
 
+        }else{
+            //let symbol = "^";
+            let availableSymbols = ['o', 's', 'd', '^', 'p', 'h', 's6', '+', 'x']
+            const randomChoice = (arr) => arr[Math.floor(arr.length * Math.random())];
+            let symbol = randomChoice(availableSymbols);
+            let markerGeometry = new  THREE.PlaneBufferGeometry(1, 1, 1)
+            //let circleGeometry = new  THREE.CircleBufferGeometry(1, 6)
+            instancedGeometry.index = markerGeometry.index;
+            instancedGeometry.attributes = markerGeometry.attributes;
+            material = new THREE.RawShaderMaterial( {
+                vertexShader: getMarkerVertexShader(fixedNodeSize, fixedColor),
+                fragmentShader: getMarkerFragmentShader(symbol),
+                uniforms: this.uniforms,
+                transparent: true,
+                //blending: THREE.AdditiveBlending,
+                //blending: THREE.NormalBlending,
+                //depthTest: true,
+                //depthTest: false,
+                depthWrite: true,
+            } );
 
-
-            nodesMesh = new THREE.Mesh(instancedGeometry, material);
 
         }
+
+        if(fixedNodeSize == false)
+            instancedGeometry.addAttribute(
+                "bufferRadius",
+                new THREE.InstancedBufferAttribute(new Float32Array(nodesData.size), 1, false)
+            );
+        if(fixedColor == false)
+            instancedGeometry.addAttribute("bufferColors",
+                new THREE.InstancedBufferAttribute(new Float32Array(nodesData.color.flat()), 3, false));
+
+        instancedGeometry.addAttribute("bufferNodePositions",
+            new THREE.InstancedBufferAttribute(new Float32Array(bufferNodePositions), 3, false)
+        );
+
+
+
+        nodesMesh = new THREE.Mesh(instancedGeometry, material);
+
 
         this.instancedNodes = nodesMesh;
 
