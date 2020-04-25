@@ -1,16 +1,14 @@
 
-export function getMarkerVertexShader(fixedNodeSize=false, fixedColor=false){
+export function getMarkerVertexShader(fixedNodeSize=false, fixedColor=false, nodesGroupName='main'){
     console.info("Get Marker Vertex Shader");
     let markerVertexShader = `
-    precision highp float;
 
-    #define SHADER_NAME MarkerImgNode
+    #define SHADER_NAME MarkerNode_${nodesGroupName}
 
     uniform mat4 modelViewMatrix;
     uniform mat4 projectionMatrix;
     uniform mat4 viewMatrix;
     attribute vec3 position;
-    attribute vec2 uv;
 
     attribute vec3 bufferNodePositions;
     `
@@ -31,15 +29,12 @@ export function getMarkerVertexShader(fixedNodeSize=false, fixedColor=false){
 
     uniform float bufferOpacity;
     uniform float bufferNodeScale;
-    uniform float useDiffuse2Shadow;
     uniform float edgeWidth;
     uniform vec3 edgeColor;
 
     varying vec3 vColor;
     varying vec3 vEdgeColor;
     varying vec3 vPos;
-    varying vec2 vUv;
-    varying float vUseDiffuse2Shadow;
     varying float vOpacity;
     varying float vEdgeWidth;
 
@@ -51,12 +46,9 @@ export function getMarkerVertexShader(fixedNodeSize=false, fixedColor=false){
 
         gl_Position = projectionMatrix * mvPosition;
 
-        vUv = uv;
 
         vColor = bufferColors;
         vOpacity = bufferOpacity;
-        vUseDiffuse2Shadow = useDiffuse2Shadow;
-        vec4 vPos2 = viewMatrix*vec4(bufferNodePositions, 1.0);
         vPos = position;
         vEdgeWidth = edgeWidth;
         vEdgeColor = edgeColor;

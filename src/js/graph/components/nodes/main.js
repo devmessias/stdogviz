@@ -10,22 +10,19 @@ import {markerImgFragmentShader} from "./shaders/markerImg.fsh.js";
 import {getMarkerVertexShader} from "./shaders/marker.vsh.js";
 import {getMarkerFragmentShader, availableMarkers} from "./shaders/marker.fsh.js";
 
-import {fragmentShaderFixedColor, vertexShader, fragmentShader} from "./shaders"
+//import {fragmentShaderFixedColor, vertexShader, fragmentShader} from "./shaders"
 
 const randomString = ()=>Math.random().toString(36).substring(2, 15);;
 
 export default class Nodes {
-    constructor(scene, layer, bloomLayer) {
+    constructor(scene, use2d) {
 
         this.createNodes = this.createNodes.bind(this);
         this.scene = scene;
-        this.layer = layer
-        this.bloomLayer = bloomLayer
 
-        this.nodesData = {}
-        this.instancedNodes
         this.nodesGroup = {};
         this.comunity = '';
+        this.use2d = use2d;
 
 
     }
@@ -90,7 +87,8 @@ export default class Nodes {
         let nodesObj = this.nodesGroup[nodesGroupName];
         if (nodesObj.fixedColor){
             let fixedColor = false;
-            nodesObj.mesh.material.vertexShader = getMarkerVertexShader(nodesObj.fixedNodeSize, fixedColor);
+            nodesObj.mesh.material.vertexShader = getMarkerVertexShader(nodesObj.fixedNodeSize, fixedColor, nodesGroupName);
+
             nodesObj.mesh.geometry.addAttribute("bufferColors",
                 new THREE.InstancedBufferAttribute(new Float32Array(colors), 3, false));
 
@@ -142,7 +140,8 @@ export default class Nodes {
                 value: color
             }
             nodesObj.mesh.geometry.deleteAttribute('bufferColors');
-            nodesObj.mesh.material.vertexShader = getMarkerVertexShader(nodesObj.fixedNodeSize, fixedColor);
+            nodesObj.mesh.material.vertexShader = getMarkerVertexShader(nodesObj.fixedNodeSize, fixedColor, nodesGroupName);
+
             nodesObj.fixedColor = true;
             nodesObj.mesh.geometry.needsUpdate = true;
             nodesObj.fixedColor = true;
@@ -182,7 +181,8 @@ export default class Nodes {
         sizes = sizes.map((s)=> (s-sMin)/(sMax-sMin))
         if (nodesObj.fixedNodeSize){
             let fixedNodeSize = false;
-            nodesObj.mesh.material.vertexShader = getMarkerVertexShader(fixedNodeSize, nodesObj.fixedColor);
+            nodesObj.mesh.material.vertexShader = getMarkerVertexShader(fixedNodeSize, nodesObj.fixedColor, nodesGroupName);
+
 
             let sizesBuffer = new THREE.InstancedBufferAttribute(new Float32Array(sizes), 1, true);
             nodesObj.mesh.geometry.addAttribute("bufferNodeSize",
@@ -214,7 +214,7 @@ export default class Nodes {
                 value: color
             }
             nodesObj.mesh.geometry.deleteAttribute('bufferNodeSizes');
-            nodesObj.mesh.material.vertexShader = getMarkerVertexShader(nodesObj.fixedNodeSize, fixedNodeSize);
+            nodesObj.mesh.material.vertexShader = getMarkerVertexShader(nodesObj.fixedNodeSize, fixedNodeSize, nodesGroupName);
             nodesObj.fixedNodeSize = true;
             nodesObj.mesh.geometry.needsUpdate = true;
             nodesObj.fixedNodeSize = true;
@@ -312,7 +312,7 @@ export default class Nodes {
             },
             bufferNodeScale:{
                 type: 'f',
-                value: 5
+                value: 1
             },
         };
         let bufferNodeSize;
@@ -380,6 +380,7 @@ export default class Nodes {
 
             //let symbol= nodesData.props.includes("marker") == false ? randomChoice(availableSymbols): nodesData.marker;
             let marker = nodesData.props.includes("marker") == false ? randomChoice(availableMarkers): nodesData.marker;
+            marker = '3do'
             let markerGeometry = new  THREE.PlaneBufferGeometry(1, 1, 1)
 
             instancedGeometry.index = markerGeometry.index;
@@ -394,13 +395,13 @@ export default class Nodes {
                 value: 0.1,
             }
             material = new THREE.RawShaderMaterial( {
-                vertexShader: getMarkerVertexShader(fixedNodeSize, fixedColor),
-                fragmentShader: getMarkerFragmentShader(marker),
+                vertexShader: getMarkerVertexShader(fixedNodeSize, fixedColor, nodesGroupName),
+                fragmentShader: getMarkerFragmentShader(marker, nodesGroupName),
                 uniforms: uniforms,
                 transparent: true,
                 //blending: THREE.AdditiveBlending,
                 //blending: THREE.NormalBlending,
-                //depthTest: true,
+                depthTest: !this.use2d,
                 //depthTest: false,
                 depthWrite: true,
             } );

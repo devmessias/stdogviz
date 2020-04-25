@@ -70,7 +70,7 @@ export default class Graph {
 
         this.scene.background = new THREE.Color(this.Config.scene.color);
 
-        this.nodes = new Nodes(this.scene, 0, 0);
+        this.nodes = new Nodes(this.scene, this.use2d);
         this.edges = new Edges(this.scene, 0, 1);
 
 

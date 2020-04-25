@@ -118,13 +118,14 @@ export default class Edges {
             //positions.push( x, y, z );
             //[x, y, z] = nodesData.pos[s]
             //positions.push( x, y, z );
-
-            colors.push(0.8);
-            colors.push(0.8);
-            colors.push(0.8);
-            colors.push(0.8);
-            colors.push(0.8);
-            colors.push(0.8);
+            colors.push(...nodesData.color[t])
+            colors.push(...nodesData.color[s])
+            //colors.push(0.8);
+            //colors.push(0.8);
+            //colors.push(0.8);
+            //colors.push(0.8);
+            //colors.push(0.8);
+            //colors.push(0.8);
 
 
 

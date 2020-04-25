@@ -39,7 +39,6 @@
 //}
 
 //`
-
 const distFunctions = {
     'o': `
         edgeWidth = edgeWidth/2.;
@@ -76,7 +75,6 @@ const distFunctions = {
     'p':`
         edgeWidth = edgeWidth/4.;
         float minSdf = 0.5/2.0;
-        float k = sqrt(3.0);
         float r = s/2.0;
         const vec3 k = vec3(0.809016994,0.587785252,0.726542528);
         p.x = abs(p.x);
@@ -134,11 +132,40 @@ const distFunctions = {
     `
 
 }
+function getDistFunction(marker){
+    const exist = Object.keys(distFunctions).includes(marker);
+    if (!exist)
+        marker = 'o'
 
-export function getMarkerFragmentShader(marker){
+    return distFunctions[marker]
+}
+
+function getShading(marker){
+    let shadingStr = ''
+    if (marker != '3do')
+        return '';
+
+    shadingStr = `
+        // shading
+
+        vec3 normal = normalize(vec3(p.xy, sdf));
+        vec3 direction = normalize(vec3(1.0, 1.0, 1.0));
+        float diffuse = max(0.0, dot(direction, normal));
+        float specular = pow(diffuse, 25.0);
+        color = vec3(max(diffuse*color, specular*vec3(1.0)));
+    `
+    return shadingStr;
+
+
+}
+
+
+export function getMarkerFragmentShader(marker, nodesGroupName='main'){
+    console.info(marker)
     return  `
     precision highp float;
-    #define SHADER_NAME MarkerNode
+
+    #define SHADER_NAME MarkerNode_${nodesGroupName}
 
     varying vec3 vColor;
     varying float vOpacity;
@@ -159,22 +186,26 @@ export function getMarkerFragmentShader(marker){
 
         float s = 0.5;
         float sdf = 0.0;
-        ${distFunctions[marker]}
+        ${getDistFunction(marker)}
+        if (sdf<0.0) discard;
+
         float edge0 = 0.0;
         float edge1 = minSdf;
         float opacity2 = opacity;
-        if (opacity<1.0) opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), 0.01, opacity);
+        //if (opacity<1.0) opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), 0.01, opacity) + 0.1;
+        ${getShading(marker)}
+
         vec4 rgba = vec4(  color, opacity2 );
 
+
         if (edgeWidth > 0.0){
-            if (sdf < edgeWidth)  rgba  = vec4(edgeColor, opacity2);
+            if (sdf < edgeWidth)  rgba  = vec4(edgeColor, 1.0);
         }
 
         gl_FragColor = rgba;
 
-        if (sdf<0.0) discard;
     }
     `
 }
 
-export const availableMarkers = ['o', 's', 'd', '^', 'p', 'h', 's6', '+', 'x'];
+export const availableMarkers = ['o', '3do', 's', 'd', '^' , 'p', 'h', 's6', '+', 'x'];

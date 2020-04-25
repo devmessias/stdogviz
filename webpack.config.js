@@ -66,6 +66,7 @@ module.exports = env => {
                     },
                     include: includePath,
                     exclude: nodeModulesPath,
+                    //presets: ["@babel/es2015", "@babel/react", "@babel/stage-0"]
                 },
                 {
                     test: /\.(vsh|fsh|glsl)$/,
@@ -111,7 +112,8 @@ module.exports = env => {
 
         // enhance debugging by adding meta info for the browser devtools
         // source-map most detailed at the expense of build speed.
-        devtool,
+        //devtool,
+        devtool: 'source-map',
 
         devServer: {
             contentBase: 'src/public',
@@ -127,14 +129,14 @@ module.exports = env => {
             }),
         ),
         optimization: {
-            //minimizer: [
-            //new UglifyJsPlugin({
-            //cache: true,
-            //parallel: true,
-            //sourceMap: true // set to true if you want JS source maps
-            //}),
-            ////new OptimizeCSSAssetsPlugin({})
-            //],
+            minimizer: [
+            new UglifyJsPlugin({
+            cache: true,
+            parallel: true,
+            sourceMap: true // set to true if you want JS source maps
+            }),
+            //new OptimizeCSSAssetsPlugin({})
+            ],
             runtimeChunk: 'single',
 
             splitChunks: {

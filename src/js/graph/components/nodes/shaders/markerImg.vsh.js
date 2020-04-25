@@ -1,6 +1,5 @@
 
 export default function getMarkerImgVertexShader(fixedNodeSize=false, fixedColor=false){
-    console.info("Get Marker Vertex Shader");
     let markerVertexShader = `
     precision highp float;
 
