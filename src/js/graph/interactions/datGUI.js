@@ -1,8 +1,13 @@
 import * as THREE from "three";
 import * as dat from 'dat.gui';
-//import Config from '../../data/config';
 
+import {availableMarkers} from "./../components/nodes/shaders/marker.fsh.js";
 
+/**
+ * Update the dropdown itens related with a given datGUI element
+ * @param  {DOMGui} datGUI select element
+ * @param  {Array} Array of strings with the dropdown itens
+ */
 function updateDropdown(target, list){
     let innerHTMLStr = "";
     for(var i=0; i<list.length; i++){
@@ -47,8 +52,19 @@ export default class DatGUI {
         this.comunityField = nodesFolder.add(appState, "comunityField", appState.comunityField)
             .name("Comunity")
             .onChange(function(value) {
-            nodes0.setComunity(value)
-        });
+                nodes0.setComunity(value)
+            });
+        let markers = {
+            marker : {
+                "--" : ""
+            }
+        }
+        nodesFolder.add(markers, "marker", availableMarkers)
+            .name("marker")
+            .onChange(function(value) {
+                nodes0.changeMarker(value)
+                render();
+            });
         nodesFolder.add( Config.nodes, 'show' ).onChange( function ( value ) {
             for (let [nodeName, node] of Object.entries(nodes0.nodes)){
                 node.visible=value;
@@ -65,10 +81,14 @@ export default class DatGUI {
         this.sizeField = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
             .name("Size Field")
             .onChange(function(value) {
-            nodes0.sizeByField(value)
-        });
+                nodes0.sizeByField(value)
+
+                render();
+            });
         nodesFolder.add(Config.nodes, 'scale', 1, 10, 0.1).name('Scale').onChange((value) => {
             nodes0.changeScale(value)
+
+            render();
             //node.material.opacity=value;
         });
         nodesFolder.addColor(Config.nodes, "edgeColor").name('Edge Color').onChange((color) => {
@@ -82,19 +102,21 @@ export default class DatGUI {
         });
         nodesFolder.add(Config.nodes, 'opacity', 0, 1).name('Opacity').onChange((value) => {
             nodes0.changeOpacity(value)
+
+            render();
             //node.material.opacity=value;
         });
 
         this.colorProp = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
             .name("Color by Attr.")
             .onChange(function(value) {
-            nodes0.colorByProp(value)
-        });
+                nodes0.colorByProp(value)
+            });
         this.colorField = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
             .name("Color Field")
             .onChange(function(value) {
-            nodes0.colorByField(value)
-        });
+                nodes0.colorByField(value)
+            });
 
 
 
@@ -103,14 +125,15 @@ export default class DatGUI {
 
         /* Edges */
         let edgesFolder = gui.addFolder('Edges');
+
         edgesFolder.add( Config.edges, 'show' ).onChange( function ( value ) {
 
             Config.edges.show = value
             render();
         } );
         //edgesFolder.addColor(Config.edges, "color").name('Color')
-            //.onChange((color) => {
-                //edges0.changeColor(color)
+        //.onChange((color) => {
+        //edges0.changeColor(color)
         //});
 
 
@@ -118,17 +141,17 @@ export default class DatGUI {
         this.colorEdgeProp = edgesFolder.add(colorEdge, "prop", colorEdge.prop)
             .name("Color by Prop.")
             .onChange(function(value) {
-            edges0.colorByProp(value)
-        });
+                edges0.colorByProp(value)
+            });
         this.colorEdgeField = edgesFolder.add(colorEdge, "field", colorEdge.prop)
             .name("Color by Field.")
             .onChange(function(value) {
-            edges0.colorByField(value)
-        });
+                edges0.colorByField(value)
+            });
 
         //nodesFolder.add(Config.nodes, 'scale', 0.01, 5).name('Scale').onChange((value) => {
-            //nodes0.changeScale(value)
-            ////node.material.opacity=value;
+        //nodes0.changeScale(value)
+        ////node.material.opacity=value;
         //});
         edgesFolder.add(Config.edges, 'opacity', 0, 1).name('Opacity').onChange((value) => {
             edges0.changeOpacity(value)
@@ -175,6 +198,35 @@ export default class DatGUI {
         //render();
         //} );
         edgesFolder.open()
+        let renderFolder = gui.addFolder('Render');
+        renderFolder.add( Config.bloomPass, 'exposure', 0.1, 5 ).onChange( function ( value ) {
+
+            renderer.toneMappingExposure = Math.pow( value, 4.0 );
+            render()
+
+        } );
+        renderFolder.add( Config.bloomPass, 'threshold', 0.0, 1.0 ).onChange( function ( value ) {
+
+            renderer.bloomPass.threshold = Number( value );
+            render()
+
+        } );
+
+        renderFolder.add( Config.bloomPass, 'strength', 0.0, 10.0 ).onChange( function ( value ) {
+
+            renderer.bloomPass.strength = Number( value );
+            render()
+
+        } );
+
+        renderFolder.add( Config.bloomPass, 'radius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
+
+            renderer.bloomPass.radius = Number( value );
+            render()
+
+        } );
+
+        renderFolder.open()
 
         /* Controls */
         //const controlsFolder = gui.addFolder('Controls');

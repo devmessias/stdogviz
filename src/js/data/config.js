@@ -2,8 +2,8 @@
 export default {
     address: "127.0.0.1:6688" ,
     scene: {
-        //color: 0xe9e9ff
-        color: 0xffffff
+        color: 0x000,
+        //color: 0xffffff
     },
     isDev: true,
     render:{
@@ -17,6 +17,13 @@ export default {
     isMouseMoving: false,
     isMouseOver: false,
     maxAnisotropy: 2,
+    bloomPass: {
+        exposure: 1,
+        strength: 0.5,
+        threshold: 0,
+        radius: 0,
+
+    },
     dpr: 1,
     layers:{
         0:{},
@@ -74,9 +81,6 @@ export default {
         near: 2,
         far: 1000,
         aspect: 1,
-        posX: 0,
-        posY: 30,
-        posZ: 40
     },
     controls: {
         autoRotate: false,

@@ -39,10 +39,13 @@ export function getMarkerVertexShader(fixedNodeSize=false, fixedColor=false, nod
     varying float vEdgeWidth;
 
     void main() {
-
         vec4 viewNodePos = modelViewMatrix * vec4( bufferNodePositions, 1.0 );
 
         vec4 mvPosition = viewNodePos +  vec4(position*bufferNodeScale*bufferNodeSize, 0);
+        // if particle size
+        //vec4 mvPosition = viewNodePos +  vec4(position, 0);
+        //gl_PointSize  = bufferNodeScale*bufferNodeSize;
+        //gl_PointSize  = 5.0;
 
         gl_Position = projectionMatrix * mvPosition;
 

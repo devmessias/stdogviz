@@ -60,23 +60,36 @@ function listenerFunction(event) {
             clearInterval(intervalGetGraph);
             //graphObj.state.defaultProps = message.defaultProps
             //
+            console.group('getGraph');
+            console.time('creatingEdges');
+
+            console.group('createEdges');
             graphObj.edges.createEdges(message.nodes, message.edges, message.defaultProps);
+            console.groupEnd()
+            console.timeEnd('creatingEdges');
+
+            console.group('createNodes');
+            console.time('creatingNodes');
             graphObj.nodes.createNodes(message.nodes, true);
+            console.timeEnd('creatingNodes');
+            console.groupEnd()
             if(graphObj.state.firstLoad){
                 graphObj.firstLoad = false;
-                graphObj.ressetLook();
+               graphObj.ressetLook();
                 clearInterval(intervalGetGraph)
             }
-            let nodes = JSON.parse(JSON.stringify(message.nodes))
-            nodes.pos = nodes.pos.map((p)=>p*0.3);
-            graphObj.nodes.createNodes(nodes, false);
+
+            graphObj.nodes.stopUpdate();
+           //let nodes = JSON.parse(JSON.stringify(message.nodes))
+            //nodes.pos = nodes.pos.map((p)=>p*0.3);
+            //graphObj.nodes.createNodes(nodes, false);
             //
             //camera.position.set(0, nodes0.max_vals[2] * (1 + 2), 0);
             graphObj.datGui.updateNodeColorProp(message.nodes.props)
             graphObj.datGui.updateComunityField(Object.keys(graphObj.nodes.nodesGroup));
             //datGui.updateEdgeColorProp(message.edges.props)
             //camera.lookAt(nodes0.instancedNodes);
-
+            console.groupEnd();
 
             break;
 
@@ -111,19 +124,36 @@ function listenerFunction(event) {
 
 
 }
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+
+console.info(queryString);
+const useHighQuality = urlParams.has('highQuality')? urlParams.get('highQuality')=='1': true;
+const useBloom = urlParams.has('bloom')? urlParams.get('bloom')=='1': true;
+const use2d = urlParams.has('use2d')? urlParams.get('2d')=='1': false;
+const address = urlParams.has('address')? urlParams.get('address'): 'localhost:6688';
 
 Config.useGuiControl = true;
+
 const graphObj = new Graph(
     "graphCanvas",
     Config,
-    keyboardPressFunction
+    keyboardPressFunction,
+    use2d,
+    useHighQuality,
+    useBloom,
 )
 window.graphObjVar = graphObj;
 graphObj.init()
 
-let dataPoolSocket = new DataPool(listenerFunction);
+console.group('Socket Conection');
+
+console.info('Address:', address);
+
+let dataPoolSocket = new DataPool(address, listenerFunction);
+
 const intervalGetGraph = setInterval(() => {
     dataPoolSocket.getGraph();
 }, 1000);
 
-
+console.groupEnd();

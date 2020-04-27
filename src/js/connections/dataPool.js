@@ -4,8 +4,9 @@ import Config from '../data/config';
 
 
 export default class DataPool {
-    constructor(listenerFunction) {
-        this.ws = new WebSocket(`ws://${Config.address}/`);
+    constructor(address, listenerFunction) {
+        this.address = address;
+        this.ws = new WebSocket(`ws://${address}/`);
 
         this.ws.onopen = function (event) {
             alertify.success("opened connection");

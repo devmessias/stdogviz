@@ -10,66 +10,54 @@ import {markerImgFragmentShader} from "./shaders/markerImg.fsh.js";
 import {getMarkerVertexShader} from "./shaders/marker.vsh.js";
 import {getMarkerFragmentShader, availableMarkers} from "./shaders/marker.fsh.js";
 
-//import {fragmentShaderFixedColor, vertexShader, fragmentShader} from "./shaders"
+import {randomString, randomChoice} from "../../helpers/tools";
 
-const randomString = ()=>Math.random().toString(36).substring(2, 15);;
-
+/**
+ * Class representing the Nodes of the Graph
+ * */
 export default class Nodes {
+    /**
+     * Create a empty nodes object
+     * @param {object} scene - THREE.scene
+     * @param {bool} use2d - If the nodes should be ploted in 2d
+     */
     constructor(scene, use2d) {
-
-        this.createNodes = this.createNodes.bind(this);
         this.scene = scene;
-
-        this.nodesGroup = {};
-        this.comunity = '';
         this.use2d = use2d;
 
+        this.nodesGroup = {};
+        // This string is used in order to indentify the group of nodes
+        // selected. If the string is empty, then the changes will be applied
+        // across all group of nodes
+        this.selectedGroupName = '';
 
     }
-
-    //updateNodesSingle(nodesData) {
-    //for (const [nodeName, props] of Object.entries(nodesData)){
-    //let node = this.nodes[nodeName];
-    //const pos = props["pos"]
-    //// let node = this.scene.getObjectByName(nodeName)
-    ////   if (node) {
-
-    //node.position.x = pos[0];
-    //node.position.y = pos[1];
-    //node.position.z = pos[2];
-    //// }
-    //}
-    //}
-    //moveNodes(pickedPos, nodesName, dr ) {
-    //for (let index = 0; index < nodesName.length; index++) {
-    ////for (const [nodeName, props] of Object.entries(nodesData)){
-    ////  let idNode = 0;
-    //let node = this.nodes[nodesName[index]];
-    //let pos = node.position
-    //// let node = this.scene.getObjectByName(nodeName)
-    ////   if (node) {
-
-    ////node.translateX(10)
-    ////node.position.x = pickedPos// pos.x+dr[0];
-    ////node.position.y = pos.y+dr[1];
-    ////node.position.z = pos.z+dr[2];
-    //// }
-    //}
-    //}
-    //deleteNode(nodeId){
-    //if (!(nodeId in this.nodes)) return
-    //this.scene.remove(this.nodes[nodeId])
-    //delete this.nodes[nodeId]
-    //}
-    setComunity(value){
-        this.comunity = Object.keys(this.nodesGroup).includes(value)? value : '';
+    /**
+     * Set the selected group
+     * @param {string} groupName - the name of the group. If the groupName thit not exist
+     *  then set the selecedGroupName as a empty string
+     **/
+    setGroup(groupName){
+        this.selectedGroupName = Object.keys(this.nodesGroup).includes(value)? value : '';
     }
-    getComunity(){
-        let arr = this.comunity != ''? [[this.comunity, this.nodesGroup[this.comunity]]] : Object.entries(this.nodesGroup);
+    /**
+     * Set the selected group
+     * @param {string} groupName - the name of the group. If the groupName thit not exist
+     *  then set the selecedGroupName as a empty string
+     * @return {array} arr - [[...[string, nodesGroupObj]]
+     **/
+    getGroup(){
+        const allGroups = Object.entries(this.nodesGroup);
+        const arr = this.selectedGroupName != ''? [[this.selectedGroupName, this.nodesGroup[this.selectedGroupName]]] : allGroups;
         return arr;
     }
+    /**
+     * Set the selected group
+     * @param {string} groupName - the name of the group. If the groupName thit not exist
+     *  then set the selecedGroupName as a empty string
+     **/
     colorByField(prop){
-        for (const [nodesGroupName, nodesObj] of this.getComunity() ) {
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
 
             let bufferColors = nodesObj.nodesData[prop].flat()
             if (bufferColors.length != nodesObj.numNodes*3){
@@ -100,6 +88,7 @@ export default class Nodes {
             nodesObj.mesh.geometry.attributes.bufferColors.array = new Float32Array(colors);
             nodesObj.mesh.geometry.attributes.bufferColors.needsUpdate = true
 
+
         }
         nodesObj.mesh.material.needsUpdate = true;
 
@@ -107,7 +96,7 @@ export default class Nodes {
     }
     colorByProp(prop){
 
-        for (const [nodesGroupName, nodesObj] of this.getComunity() ) {
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
 
             let colors = colormap({
                 colormap: "jet",
@@ -118,7 +107,7 @@ export default class Nodes {
             let values = nodesObj.nodesData[prop]
 
             const bufferColors = colors
-                .map((color, index) => [values[index], color]) // add the prop to sort by
+                .map((color, index) => [values[String(index)], color]) // add the prop to sort by
                 .sort(([val1], [val2]) => val2 - val1) // sort by the prop data
                 .map(([, color]) => color)
                 .map(([r, g, b, alpha])=>[r, g, b])
@@ -149,9 +138,39 @@ export default class Nodes {
         nodesObj.mesh.material.needsUpdate = true;
 
     }
+    updateMarker(marker, nodesGroupName){
+
+        let nodesObj = this.nodesGroup[nodesGroupName];
+        nodesObj.mesh.material.vertexShader = getMarkerVertexShader(
+            nodesObj.fixedNodeSize, nodesObj.fixedColor, nodesGroupName);
+
+        nodesObj.mesh.material.fragmentShader = getMarkerFragmentShader(
+            marker, nodesGroupName);
+
+        nodesObj.mesh.material.needsUpdate = true;
+
+
+    }
+    changeMarker(marker){
+
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
+            this.updateMarker(marker, nodesGroupName);
+
+        }
+    }
+    stopUpdate(){
+
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
+            nodesObj.mesh.geometry.needsUpdate = false
+            nodesObj.mesh.material.needsUpdate =false;
+        }
+    }
+
+
+
     changeColor(colorHEX){
 
-        for (const [nodesGroupName, nodesObj] of this.getComunity() ) {
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
             let color = new THREE.Color(colorHEX);
             this.updateColor(color, nodesGroupName);
 
@@ -160,7 +179,7 @@ export default class Nodes {
     //size gui interaction
     sizeByField(prop){
 
-        for (const [nodesGroupName, nodesObj] of this.getComunity() ) {
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
 
             let bufferNodeSize = nodesObj.nodesData[prop].flat()
             if (bufferNodeSize.length != nodesObj.numNodes){
@@ -231,16 +250,16 @@ export default class Nodes {
     }
 
     changeEdgeColor(color){
-        for (const [nodesGroupName, nodesObj] of this.getComunity() ) {
-        //for (let nodesObj of this.nodesGroup){
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
+            //for (let nodesObj of this.nodesGroup){
             nodesObj.uniforms.edgeColor.value = new THREE.Color(color);
             nodesObj.mesh.geometry.needsUpdate = true;
         }
     }
     changeEdgeWidth(value){
 
-        for (const [nodesGroupName, nodesObj] of this.getComunity() ) {
-        //for (let nodesObj of this.nodesGroup){
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
+            //for (let nodesObj of this.nodesGroup){
             nodesObj.uniforms.edgeWidth.value = value;
             nodesObj.mesh.geometry.needsUpdate = true;
         }
@@ -248,16 +267,16 @@ export default class Nodes {
 
     changeOpacity(value){
 
-        for (const [nodesGroupName, nodesObj] of this.getComunity() ) {
-        //for (let nodesObj of this.nodesGroup){
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
+            //for (let nodesObj of this.nodesGroup){
             nodesObj.uniforms.bufferOpacity.value = value;
             nodesObj.mesh.geometry.needsUpdate = true;
         }
     }
     changeScale(value){
 
-        for (const [nodesGroupName, nodesObj] of this.getComunity() ) {
-        //for (let nodesObj of this.nodesGroup){
+        for (const [nodesGroupName, nodesObj] of this.getGroup() ) {
+            //for (let nodesObj of this.nodesGroup){
             nodesObj.uniforms.bufferNodeScale.value = value;
             nodesObj.mesh.geometry.needsUpdate = true;
             nodesObj.mesh.material.needsUpdate = true;
@@ -291,19 +310,15 @@ export default class Nodes {
         console.info("Creating nodes", nodesGroupName);
 
 
-        let what = 2;
-        what = what || 'points';
         let nodesObj = {}
 
         const numNodes = Object.keys(nodesData.id).length
-        const fixedNodeSize = nodesData.props.includes("size2") == false;
+        const fixedNodeSize = nodesData.props.includes("size") == false;
         const fixedColor = nodesData.props.includes("color") == false;
 
+        if (clear) this.deleteAllNodes();
 
-               //if (clear) this.deleteAllNodes();
-
-
-        let bufferNodePositions = nodesData.pos
+        let bufferNodePositions = nodesData.pos;
 
         let uniforms = {
             bufferOpacity: {
@@ -335,79 +350,68 @@ export default class Nodes {
         let nodesMesh;
 
         let material;
-        //const marker = '2'
-        //const markerImg = 'circle';
-        //const markerImg = 'ball';
-        //const markerImg = 'disc';
-        //const markerImg = 'spark1';
-        //const markerImg = 'lensflare';
-
         let instancedGeometry = new THREE.InstancedBufferGeometry();
         //if (marker=='1'){
-            ////
-            //let markerGeometry = new  THREE.PlaneBufferGeometry(1, 1, 1)
-            ////let circleGeometry = new  THREE.CircleBufferGeometry(1, 6)
-            //instancedGeometry.index = markerGeometry.index;
-            //instancedGeometry.attributes = markerGeometry.attributes;
-            //this.uniforms.map = { value: new THREE.TextureLoader().load( `textures/sprites/${markerImg}.png` ) }
-            //this.uniforms.useDiffuse2Shadow = {
-                //type: 'f',
-                //value: 0,
-            //}
-            //this.uniforms.edgeColor = {
-                //type: 'vec3',
-                //value: new Float32Array([0.8, 0.8, 0.8])
-            //}
+        ////
+        //let markerGeometry = new  THREE.PlaneBufferGeometry(1, 1, 1)
+        ////let circleGeometry = new  THREE.CircleBufferGeometry(1, 6)
+        //instancedGeometry.index = markerGeometry.index;
+        //instancedGeometry.attributes = markerGeometry.attributes;
+        //this.uniforms.map = { value: new THREE.TextureLoader().load( `textures/sprites/${markerImg}.png` ) }
+        //this.uniforms.useDiffuse2Shadow = {
+        //type: 'f',
+        //value: 0,
+        //}
+        //this.uniforms.edgeColor = {
+        //type: 'vec3',
+        //value: new Float32Array([0.8, 0.8, 0.8])
+        //}
 
 
-            ////instancedGeometry = instancedGeometry.copy(circleGeometry);
-            //material = new THREE.RawShaderMaterial( {
-                ////vertexShader: markerVertexShader,
-                //vertexShader: getMarkerImgVertexShader(fixedNodeSize, fixedColor),
-                //fragmentShader: markerImgFragmentShader,
-                //uniforms: this.uniforms,
-                //transparent: true,
-                ////blending: THREE.AdditiveBlending,
-                //blending: THREE.NormalBlending,
-                ////depthTest: true,
-                ////depthTest: false,
-                //depthWrite: true,
-            //} );
+        ////instancedGeometry = instancedGeometry.copy(circleGeometry);
+        //material = new THREE.RawShaderMaterial( {
+        ////vertexShader: markerVertexShader,
+        //vertexShader: getMarkerImgVertexShader(fixedNodeSize, fixedColor),
+        //fragmentShader: markerImgFragmentShader,
+        //uniforms: this.uniforms,
+        //transparent: true,
+        ////blending: THREE.AdditiveBlending,
+        //blending: THREE.NormalBlending,
+        ////depthTest: true,
+        ////depthTest: false,
+        //depthWrite: true,
+        //} );
 
         //}else{
-            //let symbol = "^";
-            const randomChoice = (arr) => arr[Math.floor(arr.length * Math.random())];
+        //let symbol = "^";
 
-            //let symbol= nodesData.props.includes("marker") == false ? randomChoice(availableSymbols): nodesData.marker;
-            let marker = nodesData.props.includes("marker") == false ? randomChoice(availableMarkers): nodesData.marker;
-            marker = '3do'
-            let markerGeometry = new  THREE.PlaneBufferGeometry(1, 1, 1)
+        let marker = nodesData.props.includes("marker") == false ? randomChoice(Object.values(availableMarkers)): nodesData.marker;
+        marker = '3do'
 
-            instancedGeometry.index = markerGeometry.index;
-            instancedGeometry.attributes = markerGeometry.attributes;
+        let markerGeometry = new  THREE.PlaneBufferGeometry(1, 1, 1)
 
-            uniforms.edgeColor = {
-                type: 'vec3',
-                value: new THREE.Color(Config.nodes.edgeColor),
-            }
-            uniforms.edgeWidth = {
-                type: 'f',
-                value: 0.1,
-            }
-            material = new THREE.RawShaderMaterial( {
-                vertexShader: getMarkerVertexShader(fixedNodeSize, fixedColor, nodesGroupName),
-                fragmentShader: getMarkerFragmentShader(marker, nodesGroupName),
-                uniforms: uniforms,
-                transparent: true,
-                //blending: THREE.AdditiveBlending,
-                //blending: THREE.NormalBlending,
-                depthTest: !this.use2d,
-                //depthTest: false,
-                depthWrite: true,
-            } );
+        instancedGeometry = instancedGeometry.copy(markerGeometry);
+        instancedGeometry.maxInstancedCount = numNodes;
 
-
-        //}
+        uniforms.edgeColor = {
+            type: 'vec3',
+            value: new THREE.Color(Config.nodes.edgeColor),
+        }
+        uniforms.edgeWidth = {
+            type: 'f',
+            value: 0.0,
+        }
+        material = new THREE.RawShaderMaterial( {
+            vertexShader: getMarkerVertexShader(fixedNodeSize, fixedColor, nodesGroupName),
+            fragmentShader: getMarkerFragmentShader(marker, nodesGroupName),
+            uniforms: uniforms,
+            transparent: true,
+            //blending: THREE.AdditiveBlending,
+            //blending: THREE.NormalBlending,
+            depthTest: !this.use2d,
+            //depthTest: false,
+            depthWrite: true,
+        } );
 
         if(fixedNodeSize == false)
             instancedGeometry.addAttribute(
@@ -422,7 +426,6 @@ export default class Nodes {
             new THREE.InstancedBufferAttribute(new Float32Array(bufferNodePositions), 3, false)
         );
 
-
         nodesMesh = new THREE.Mesh(instancedGeometry, material);
 
         this.scene.add(nodesMesh);
@@ -434,7 +437,6 @@ export default class Nodes {
         nodesObj.fixedNodeSize = fixedNodeSize;
         nodesObj.fixedColor = fixedColor;
         nodesObj.numNodes = numNodes;
-
 
         this.nodesGroup[nodesGroupName] = nodesObj;
 

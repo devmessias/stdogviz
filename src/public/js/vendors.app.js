@@ -58223,715 +58223,145 @@ MapControls.prototype.constructor = MapControls;
 
 /***/ }),
 
-/***/ "./node_modules/three/examples/jsm/controls/TrackballControls.js":
-/*!***********************************************************************!*\
-  !*** ./node_modules/three/examples/jsm/controls/TrackballControls.js ***!
-  \***********************************************************************/
-/*! exports provided: TrackballControls */
+/***/ "./node_modules/three/examples/jsm/postprocessing/BloomPass.js":
+/*!*********************************************************************!*\
+  !*** ./node_modules/three/examples/jsm/postprocessing/BloomPass.js ***!
+  \*********************************************************************/
+/*! exports provided: BloomPass */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TrackballControls", function() { return TrackballControls; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BloomPass", function() { return BloomPass; });
 /* harmony import */ var _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../build/three.module.js */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _postprocessing_Pass_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../postprocessing/Pass.js */ "./node_modules/three/examples/jsm/postprocessing/Pass.js");
+/* harmony import */ var _shaders_CopyShader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shaders/CopyShader.js */ "./node_modules/three/examples/jsm/shaders/CopyShader.js");
+/* harmony import */ var _shaders_ConvolutionShader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shaders/ConvolutionShader.js */ "./node_modules/three/examples/jsm/shaders/ConvolutionShader.js");
 /**
- * @author Eberhard Graether / http://egraether.com/
- * @author Mark Lundin 	/ http://mark-lundin.com
- * @author Simone Manini / http://daron1337.github.io
- * @author Luca Antiga 	/ http://lantiga.github.io
+ * @author alteredq / http://alteredqualia.com/
  */
 
 
 
-var TrackballControls = function ( object, domElement ) {
 
-	if ( domElement === undefined ) console.warn( 'THREE.TrackballControls: The second parameter "domElement" is now mandatory.' );
-	if ( domElement === document ) console.error( 'THREE.TrackballControls: "document" should not be used as the target "domElement". Please use "renderer.domElement" instead.' );
 
-	var _this = this;
-	var STATE = { NONE: - 1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM_PAN: 4 };
 
-	this.object = object;
-	this.domElement = domElement;
+var BloomPass = function ( strength, kernelSize, sigma, resolution ) {
 
-	// API
+	_postprocessing_Pass_js__WEBPACK_IMPORTED_MODULE_1__["Pass"].call( this );
 
-	this.enabled = true;
+	strength = ( strength !== undefined ) ? strength : 1;
+	kernelSize = ( kernelSize !== undefined ) ? kernelSize : 25;
+	sigma = ( sigma !== undefined ) ? sigma : 4.0;
+	resolution = ( resolution !== undefined ) ? resolution : 256;
 
-	this.screen = { left: 0, top: 0, width: 0, height: 0 };
+	// render targets
 
-	this.rotateSpeed = 1.0;
-	this.zoomSpeed = 1.2;
-	this.panSpeed = 0.3;
+	var pars = { minFilter: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["LinearFilter"], magFilter: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["LinearFilter"], format: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["RGBAFormat"] };
 
-	this.noRotate = false;
-	this.noZoom = false;
-	this.noPan = false;
+	this.renderTargetX = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderTarget"]( resolution, resolution, pars );
+	this.renderTargetX.texture.name = "BloomPass.x";
+	this.renderTargetY = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderTarget"]( resolution, resolution, pars );
+	this.renderTargetY.texture.name = "BloomPass.y";
 
-	this.staticMoving = false;
-	this.dynamicDampingFactor = 0.2;
+	// copy material
 
-	this.minDistance = 0;
-	this.maxDistance = Infinity;
+	if ( _shaders_CopyShader_js__WEBPACK_IMPORTED_MODULE_2__["CopyShader"] === undefined )
+		console.error( "BloomPass relies on CopyShader" );
 
-	this.keys = [ 65 /*A*/, 83 /*S*/, 68 /*D*/ ];
+	var copyShader = _shaders_CopyShader_js__WEBPACK_IMPORTED_MODULE_2__["CopyShader"];
 
-	this.mouseButtons = { LEFT: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["MOUSE"].ROTATE, MIDDLE: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["MOUSE"].ZOOM, RIGHT: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["MOUSE"].PAN };
+	this.copyUniforms = _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["UniformsUtils"].clone( copyShader.uniforms );
 
-	// internals
+	this.copyUniforms[ "opacity" ].value = strength;
 
-	this.target = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"]();
+	this.materialCopy = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["ShaderMaterial"]( {
 
-	var EPS = 0.000001;
+		uniforms: this.copyUniforms,
+		vertexShader: copyShader.vertexShader,
+		fragmentShader: copyShader.fragmentShader,
+		blending: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["AdditiveBlending"],
+		transparent: true
 
-	var lastPosition = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"]();
-	var lastZoom = 1;
+	} );
 
-	var _state = STATE.NONE,
-		_keyState = STATE.NONE,
+	// convolution material
 
-		_eye = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"](),
+	if ( _shaders_ConvolutionShader_js__WEBPACK_IMPORTED_MODULE_3__["ConvolutionShader"] === undefined )
+		console.error( "BloomPass relies on ConvolutionShader" );
 
-		_movePrev = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"](),
-		_moveCurr = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"](),
+	var convolutionShader = _shaders_ConvolutionShader_js__WEBPACK_IMPORTED_MODULE_3__["ConvolutionShader"];
 
-		_lastAxis = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"](),
-		_lastAngle = 0,
+	this.convolutionUniforms = _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["UniformsUtils"].clone( convolutionShader.uniforms );
 
-		_zoomStart = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"](),
-		_zoomEnd = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"](),
+	this.convolutionUniforms[ "uImageIncrement" ].value = BloomPass.blurX;
+	this.convolutionUniforms[ "cKernel" ].value = _shaders_ConvolutionShader_js__WEBPACK_IMPORTED_MODULE_3__["ConvolutionShader"].buildKernel( sigma );
 
-		_touchZoomDistanceStart = 0,
-		_touchZoomDistanceEnd = 0,
+	this.materialConvolution = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["ShaderMaterial"]( {
 
-		_panStart = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"](),
-		_panEnd = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]();
-
-	// for reset
-
-	this.target0 = this.target.clone();
-	this.position0 = this.object.position.clone();
-	this.up0 = this.object.up.clone();
-	this.zoom0 = this.object.zoom;
-
-	// events
-
-	var changeEvent = { type: 'change' };
-	var startEvent = { type: 'start' };
-	var endEvent = { type: 'end' };
-
-
-	// methods
-
-	this.handleResize = function () {
-
-		var box = this.domElement.getBoundingClientRect();
-		// adjustments come from similar code in the jquery offset() function
-		var d = this.domElement.ownerDocument.documentElement;
-		this.screen.left = box.left + window.pageXOffset - d.clientLeft;
-		this.screen.top = box.top + window.pageYOffset - d.clientTop;
-		this.screen.width = box.width;
-		this.screen.height = box.height;
-
-	};
-
-	var getMouseOnScreen = ( function () {
-
-		var vector = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]();
-
-		return function getMouseOnScreen( pageX, pageY ) {
-
-			vector.set(
-				( pageX - _this.screen.left ) / _this.screen.width,
-				( pageY - _this.screen.top ) / _this.screen.height
-			);
-
-			return vector;
-
-		};
-
-	}() );
-
-	var getMouseOnCircle = ( function () {
-
-		var vector = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]();
-
-		return function getMouseOnCircle( pageX, pageY ) {
-
-			vector.set(
-				( ( pageX - _this.screen.width * 0.5 - _this.screen.left ) / ( _this.screen.width * 0.5 ) ),
-				( ( _this.screen.height + 2 * ( _this.screen.top - pageY ) ) / _this.screen.width ) // screen.width intentional
-			);
-
-			return vector;
-
-		};
-
-	}() );
-
-	this.rotateCamera = ( function () {
-
-		var axis = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"](),
-			quaternion = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Quaternion"](),
-			eyeDirection = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"](),
-			objectUpDirection = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"](),
-			objectSidewaysDirection = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"](),
-			moveDirection = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"](),
-			angle;
-
-		return function rotateCamera() {
-
-			moveDirection.set( _moveCurr.x - _movePrev.x, _moveCurr.y - _movePrev.y, 0 );
-			angle = moveDirection.length();
-
-			if ( angle ) {
-
-				_eye.copy( _this.object.position ).sub( _this.target );
-
-				eyeDirection.copy( _eye ).normalize();
-				objectUpDirection.copy( _this.object.up ).normalize();
-				objectSidewaysDirection.crossVectors( objectUpDirection, eyeDirection ).normalize();
-
-				objectUpDirection.setLength( _moveCurr.y - _movePrev.y );
-				objectSidewaysDirection.setLength( _moveCurr.x - _movePrev.x );
-
-				moveDirection.copy( objectUpDirection.add( objectSidewaysDirection ) );
-
-				axis.crossVectors( moveDirection, _eye ).normalize();
-
-				angle *= _this.rotateSpeed;
-				quaternion.setFromAxisAngle( axis, angle );
-
-				_eye.applyQuaternion( quaternion );
-				_this.object.up.applyQuaternion( quaternion );
-
-				_lastAxis.copy( axis );
-				_lastAngle = angle;
-
-			} else if ( ! _this.staticMoving && _lastAngle ) {
-
-				_lastAngle *= Math.sqrt( 1.0 - _this.dynamicDampingFactor );
-				_eye.copy( _this.object.position ).sub( _this.target );
-				quaternion.setFromAxisAngle( _lastAxis, _lastAngle );
-				_eye.applyQuaternion( quaternion );
-				_this.object.up.applyQuaternion( quaternion );
-
-			}
-
-			_movePrev.copy( _moveCurr );
-
-		};
-
-	}() );
-
-
-	this.zoomCamera = function () {
-
-		var factor;
-
-		if ( _state === STATE.TOUCH_ZOOM_PAN ) {
-
-			factor = _touchZoomDistanceStart / _touchZoomDistanceEnd;
-			_touchZoomDistanceStart = _touchZoomDistanceEnd;
-
-			if ( _this.object.isPerspectiveCamera ) {
-
-				_eye.multiplyScalar( factor );
-
-			} else if ( _this.object.isOrthographicCamera ) {
-
-				_this.object.zoom *= factor;
-				_this.object.updateProjectionMatrix();
-
-			} else {
-
-				console.warn( 'THREE.TrackballControls: Unsupported camera type' );
-
-			}
-
-		} else {
-
-			factor = 1.0 + ( _zoomEnd.y - _zoomStart.y ) * _this.zoomSpeed;
-
-			if ( factor !== 1.0 && factor > 0.0 ) {
-
-				if ( _this.object.isPerspectiveCamera ) {
-
-					_eye.multiplyScalar( factor );
-
-				} else if ( _this.object.isOrthographicCamera ) {
-
-					_this.object.zoom /= factor;
-					_this.object.updateProjectionMatrix();
-
-				} else {
-
-					console.warn( 'THREE.TrackballControls: Unsupported camera type' );
-
-				}
-
-			}
-
-			if ( _this.staticMoving ) {
-
-				_zoomStart.copy( _zoomEnd );
-
-			} else {
-
-				_zoomStart.y += ( _zoomEnd.y - _zoomStart.y ) * this.dynamicDampingFactor;
-
-			}
-
+		uniforms: this.convolutionUniforms,
+		vertexShader: convolutionShader.vertexShader,
+		fragmentShader: convolutionShader.fragmentShader,
+		defines: {
+			"KERNEL_SIZE_FLOAT": kernelSize.toFixed( 1 ),
+			"KERNEL_SIZE_INT": kernelSize.toFixed( 0 )
 		}
 
-	};
+	} );
 
-	this.panCamera = ( function () {
+	this.needsSwap = false;
 
-		var mouseChange = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"](),
-			objectUp = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"](),
-			pan = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"]();
-
-		return function panCamera() {
-
-			mouseChange.copy( _panEnd ).sub( _panStart );
-
-			if ( mouseChange.lengthSq() ) {
-
-				if ( _this.object.isOrthographicCamera ) {
-
-					var scale_x = ( _this.object.right - _this.object.left ) / _this.object.zoom / _this.domElement.clientWidth;
-					var scale_y = ( _this.object.top - _this.object.bottom ) / _this.object.zoom / _this.domElement.clientWidth;
-
-					mouseChange.x *= scale_x;
-					mouseChange.y *= scale_y;
-
-				}
-
-				mouseChange.multiplyScalar( _eye.length() * _this.panSpeed );
-
-				pan.copy( _eye ).cross( _this.object.up ).setLength( mouseChange.x );
-				pan.add( objectUp.copy( _this.object.up ).setLength( mouseChange.y ) );
-
-				_this.object.position.add( pan );
-				_this.target.add( pan );
-
-				if ( _this.staticMoving ) {
-
-					_panStart.copy( _panEnd );
-
-				} else {
-
-					_panStart.add( mouseChange.subVectors( _panEnd, _panStart ).multiplyScalar( _this.dynamicDampingFactor ) );
-
-				}
-
-			}
-
-		};
-
-	}() );
-
-	this.checkDistances = function () {
-
-		if ( ! _this.noZoom || ! _this.noPan ) {
-
-			if ( _eye.lengthSq() > _this.maxDistance * _this.maxDistance ) {
-
-				_this.object.position.addVectors( _this.target, _eye.setLength( _this.maxDistance ) );
-				_zoomStart.copy( _zoomEnd );
-
-			}
-
-			if ( _eye.lengthSq() < _this.minDistance * _this.minDistance ) {
-
-				_this.object.position.addVectors( _this.target, _eye.setLength( _this.minDistance ) );
-				_zoomStart.copy( _zoomEnd );
-
-			}
-
-		}
-
-	};
-
-	this.update = function () {
-
-		_eye.subVectors( _this.object.position, _this.target );
-
-		if ( ! _this.noRotate ) {
-
-			_this.rotateCamera();
-
-		}
-
-		if ( ! _this.noZoom ) {
-
-			_this.zoomCamera();
-
-		}
-
-		if ( ! _this.noPan ) {
-
-			_this.panCamera();
-
-		}
-
-		_this.object.position.addVectors( _this.target, _eye );
-
-		if ( _this.object.isPerspectiveCamera ) {
-
-			_this.checkDistances();
-
-			_this.object.lookAt( _this.target );
-
-			if ( lastPosition.distanceToSquared( _this.object.position ) > EPS ) {
-
-				_this.dispatchEvent( changeEvent );
-
-				lastPosition.copy( _this.object.position );
-
-			}
-
-		} else if ( _this.object.isOrthographicCamera ) {
-
-			_this.object.lookAt( _this.target );
-
-			if ( lastPosition.distanceToSquared( _this.object.position ) > EPS || lastZoom !== _this.object.zoom ) {
-
-				_this.dispatchEvent( changeEvent );
-
-				lastPosition.copy( _this.object.position );
-				lastZoom = _this.object.zoom;
-
-			}
-
-		} else {
-
-			console.warn( 'THREE.TrackballControls: Unsupported camera type' );
-
-		}
-
-	};
-
-	this.reset = function () {
-
-		_state = STATE.NONE;
-		_keyState = STATE.NONE;
-
-		_this.target.copy( _this.target0 );
-		_this.object.position.copy( _this.position0 );
-		_this.object.up.copy( _this.up0 );
-		_this.object.zoom = _this.zoom0;
-
-		_this.object.updateProjectionMatrix();
-
-		_eye.subVectors( _this.object.position, _this.target );
-
-		_this.object.lookAt( _this.target );
-
-		_this.dispatchEvent( changeEvent );
-
-		lastPosition.copy( _this.object.position );
-		lastZoom = _this.object.zoom;
-
-	};
-
-	// listeners
-
-	function keydown( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		window.removeEventListener( 'keydown', keydown );
-
-		if ( _keyState !== STATE.NONE ) {
-
-			return;
-
-		} else if ( event.keyCode === _this.keys[ STATE.ROTATE ] && ! _this.noRotate ) {
-
-			_keyState = STATE.ROTATE;
-
-		} else if ( event.keyCode === _this.keys[ STATE.ZOOM ] && ! _this.noZoom ) {
-
-			_keyState = STATE.ZOOM;
-
-		} else if ( event.keyCode === _this.keys[ STATE.PAN ] && ! _this.noPan ) {
-
-			_keyState = STATE.PAN;
-
-		}
-
-	}
-
-	function keyup() {
-
-		if ( _this.enabled === false ) return;
-
-		_keyState = STATE.NONE;
-
-		window.addEventListener( 'keydown', keydown, false );
-
-	}
-
-	function mousedown( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		if ( _state === STATE.NONE ) {
-
-			switch ( event.button ) {
-
-				case _this.mouseButtons.LEFT:
-					_state = STATE.ROTATE;
-					break;
-
-				case _this.mouseButtons.MIDDLE:
-					_state = STATE.ZOOM;
-					break;
-
-				case _this.mouseButtons.RIGHT:
-					_state = STATE.PAN;
-					break;
-
-				default:
-					_state = STATE.NONE;
-
-			}
-
-		}
-
-		var state = ( _keyState !== STATE.NONE ) ? _keyState : _state;
-
-		if ( state === STATE.ROTATE && ! _this.noRotate ) {
-
-			_moveCurr.copy( getMouseOnCircle( event.pageX, event.pageY ) );
-			_movePrev.copy( _moveCurr );
-
-		} else if ( state === STATE.ZOOM && ! _this.noZoom ) {
-
-			_zoomStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-			_zoomEnd.copy( _zoomStart );
-
-		} else if ( state === STATE.PAN && ! _this.noPan ) {
-
-			_panStart.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-			_panEnd.copy( _panStart );
-
-		}
-
-		document.addEventListener( 'mousemove', mousemove, false );
-		document.addEventListener( 'mouseup', mouseup, false );
-
-		_this.dispatchEvent( startEvent );
-
-	}
-
-	function mousemove( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		var state = ( _keyState !== STATE.NONE ) ? _keyState : _state;
-
-		if ( state === STATE.ROTATE && ! _this.noRotate ) {
-
-			_movePrev.copy( _moveCurr );
-			_moveCurr.copy( getMouseOnCircle( event.pageX, event.pageY ) );
-
-		} else if ( state === STATE.ZOOM && ! _this.noZoom ) {
-
-			_zoomEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-
-		} else if ( state === STATE.PAN && ! _this.noPan ) {
-
-			_panEnd.copy( getMouseOnScreen( event.pageX, event.pageY ) );
-
-		}
-
-	}
-
-	function mouseup( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		_state = STATE.NONE;
-
-		document.removeEventListener( 'mousemove', mousemove );
-		document.removeEventListener( 'mouseup', mouseup );
-		_this.dispatchEvent( endEvent );
-
-	}
-
-	function mousewheel( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		if ( _this.noZoom === true ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		switch ( event.deltaMode ) {
-
-			case 2:
-				// Zoom in pages
-				_zoomStart.y -= event.deltaY * 0.025;
-				break;
-
-			case 1:
-				// Zoom in lines
-				_zoomStart.y -= event.deltaY * 0.01;
-				break;
-
-			default:
-				// undefined, 0, assume pixels
-				_zoomStart.y -= event.deltaY * 0.00025;
-				break;
-
-		}
-
-		_this.dispatchEvent( startEvent );
-		_this.dispatchEvent( endEvent );
-
-	}
-
-	function touchstart( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-
-		switch ( event.touches.length ) {
-
-			case 1:
-				_state = STATE.TOUCH_ROTATE;
-				_moveCurr.copy( getMouseOnCircle( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
-				_movePrev.copy( _moveCurr );
-				break;
-
-			default: // 2 or more
-				_state = STATE.TOUCH_ZOOM_PAN;
-				var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-				var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-				_touchZoomDistanceEnd = _touchZoomDistanceStart = Math.sqrt( dx * dx + dy * dy );
-
-				var x = ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX ) / 2;
-				var y = ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY ) / 2;
-				_panStart.copy( getMouseOnScreen( x, y ) );
-				_panEnd.copy( _panStart );
-				break;
-
-		}
-
-		_this.dispatchEvent( startEvent );
-
-	}
-
-	function touchmove( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-		event.stopPropagation();
-
-		switch ( event.touches.length ) {
-
-			case 1:
-				_movePrev.copy( _moveCurr );
-				_moveCurr.copy( getMouseOnCircle( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
-				break;
-
-			default: // 2 or more
-				var dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-				var dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-				_touchZoomDistanceEnd = Math.sqrt( dx * dx + dy * dy );
-
-				var x = ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX ) / 2;
-				var y = ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY ) / 2;
-				_panEnd.copy( getMouseOnScreen( x, y ) );
-				break;
-
-		}
-
-	}
-
-	function touchend( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		switch ( event.touches.length ) {
-
-			case 0:
-				_state = STATE.NONE;
-				break;
-
-			case 1:
-				_state = STATE.TOUCH_ROTATE;
-				_moveCurr.copy( getMouseOnCircle( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY ) );
-				_movePrev.copy( _moveCurr );
-				break;
-
-		}
-
-		_this.dispatchEvent( endEvent );
-
-	}
-
-	function contextmenu( event ) {
-
-		if ( _this.enabled === false ) return;
-
-		event.preventDefault();
-
-	}
-
-	this.dispose = function () {
-
-		this.domElement.removeEventListener( 'contextmenu', contextmenu, false );
-		this.domElement.removeEventListener( 'mousedown', mousedown, false );
-		this.domElement.removeEventListener( 'wheel', mousewheel, false );
-
-		this.domElement.removeEventListener( 'touchstart', touchstart, false );
-		this.domElement.removeEventListener( 'touchend', touchend, false );
-		this.domElement.removeEventListener( 'touchmove', touchmove, false );
-
-		document.removeEventListener( 'mousemove', mousemove, false );
-		document.removeEventListener( 'mouseup', mouseup, false );
-
-		window.removeEventListener( 'keydown', keydown, false );
-		window.removeEventListener( 'keyup', keyup, false );
-
-	};
-
-	this.domElement.addEventListener( 'contextmenu', contextmenu, false );
-	this.domElement.addEventListener( 'mousedown', mousedown, false );
-	this.domElement.addEventListener( 'wheel', mousewheel, false );
-
-	this.domElement.addEventListener( 'touchstart', touchstart, false );
-	this.domElement.addEventListener( 'touchend', touchend, false );
-	this.domElement.addEventListener( 'touchmove', touchmove, false );
-
-	window.addEventListener( 'keydown', keydown, false );
-	window.addEventListener( 'keyup', keyup, false );
-
-	this.handleResize();
-
-	// force an update at start
-	this.update();
+	this.fsQuad = new _postprocessing_Pass_js__WEBPACK_IMPORTED_MODULE_1__["Pass"].FullScreenQuad( null );
 
 };
 
-TrackballControls.prototype = Object.create( _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["EventDispatcher"].prototype );
-TrackballControls.prototype.constructor = TrackballControls;
+BloomPass.prototype = Object.assign( Object.create( _postprocessing_Pass_js__WEBPACK_IMPORTED_MODULE_1__["Pass"].prototype ), {
+
+	constructor: BloomPass,
+
+	render: function ( renderer, writeBuffer, readBuffer, deltaTime, maskActive ) {
+
+		if ( maskActive ) renderer.state.buffers.stencil.setTest( false );
+
+		// Render quad with blured scene into texture (convolution pass 1)
+
+		this.fsQuad.material = this.materialConvolution;
+
+		this.convolutionUniforms[ "tDiffuse" ].value = readBuffer.texture;
+		this.convolutionUniforms[ "uImageIncrement" ].value = BloomPass.blurX;
+
+		renderer.setRenderTarget( this.renderTargetX );
+		renderer.clear();
+		this.fsQuad.render( renderer );
+
+
+		// Render quad with blured scene into texture (convolution pass 2)
+
+		this.convolutionUniforms[ "tDiffuse" ].value = this.renderTargetX.texture;
+		this.convolutionUniforms[ "uImageIncrement" ].value = BloomPass.blurY;
+
+		renderer.setRenderTarget( this.renderTargetY );
+		renderer.clear();
+		this.fsQuad.render( renderer );
+
+		// Render original scene with superimposed blur to texture
+
+		this.fsQuad.material = this.materialCopy;
+
+		this.copyUniforms[ "tDiffuse" ].value = this.renderTargetY.texture;
+
+		if ( maskActive ) renderer.state.buffers.stencil.setTest( true );
+
+		renderer.setRenderTarget( readBuffer );
+		if ( this.clear ) renderer.clear();
+		this.fsQuad.render( renderer );
+
+	}
+
+} );
+
+BloomPass.blurX = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( 0.001953125, 0.0 );
+BloomPass.blurY = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( 0.0, 0.001953125 );
 
 
 
@@ -59665,6 +59095,548 @@ ShaderPass.prototype = Object.assign( Object.create( _postprocessing_Pass_js__WE
 	}
 
 } );
+
+
+
+
+/***/ }),
+
+/***/ "./node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js":
+/*!***************************************************************************!*\
+  !*** ./node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js ***!
+  \***************************************************************************/
+/*! exports provided: UnrealBloomPass */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "UnrealBloomPass", function() { return UnrealBloomPass; });
+/* harmony import */ var _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../build/three.module.js */ "./node_modules/three/build/three.module.js");
+/* harmony import */ var _postprocessing_Pass_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../postprocessing/Pass.js */ "./node_modules/three/examples/jsm/postprocessing/Pass.js");
+/* harmony import */ var _shaders_CopyShader_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../shaders/CopyShader.js */ "./node_modules/three/examples/jsm/shaders/CopyShader.js");
+/* harmony import */ var _shaders_LuminosityHighPassShader_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../shaders/LuminosityHighPassShader.js */ "./node_modules/three/examples/jsm/shaders/LuminosityHighPassShader.js");
+/**
+ * @author spidersharma / http://eduperiment.com/
+ */
+
+
+
+
+
+
+/**
+ * UnrealBloomPass is inspired by the bloom pass of Unreal Engine. It creates a
+ * mip map chain of bloom textures and blurs them with different radii. Because
+ * of the weighted combination of mips, and because larger blurs are done on
+ * higher mips, this effect provides good quality and performance.
+ *
+ * Reference:
+ * - https://docs.unrealengine.com/latest/INT/Engine/Rendering/PostProcessEffects/Bloom/
+ */
+var UnrealBloomPass = function ( resolution, strength, radius, threshold ) {
+
+	_postprocessing_Pass_js__WEBPACK_IMPORTED_MODULE_1__["Pass"].call( this );
+
+	this.strength = ( strength !== undefined ) ? strength : 1;
+	this.radius = radius;
+	this.threshold = threshold;
+	this.resolution = ( resolution !== undefined ) ? new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( resolution.x, resolution.y ) : new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( 256, 256 );
+
+	// create color only once here, reuse it later inside the render function
+	this.clearColor = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Color"]( 0, 0, 0 );
+
+	// render targets
+	var pars = { minFilter: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["LinearFilter"], magFilter: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["LinearFilter"], format: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["RGBAFormat"] };
+	this.renderTargetsHorizontal = [];
+	this.renderTargetsVertical = [];
+	this.nMips = 5;
+	var resx = Math.round( this.resolution.x / 2 );
+	var resy = Math.round( this.resolution.y / 2 );
+
+	this.renderTargetBright = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderTarget"]( resx, resy, pars );
+	this.renderTargetBright.texture.name = "UnrealBloomPass.bright";
+	this.renderTargetBright.texture.generateMipmaps = false;
+
+	for ( var i = 0; i < this.nMips; i ++ ) {
+
+		var renderTargetHorizonal = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderTarget"]( resx, resy, pars );
+
+		renderTargetHorizonal.texture.name = "UnrealBloomPass.h" + i;
+		renderTargetHorizonal.texture.generateMipmaps = false;
+
+		this.renderTargetsHorizontal.push( renderTargetHorizonal );
+
+		var renderTargetVertical = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderTarget"]( resx, resy, pars );
+
+		renderTargetVertical.texture.name = "UnrealBloomPass.v" + i;
+		renderTargetVertical.texture.generateMipmaps = false;
+
+		this.renderTargetsVertical.push( renderTargetVertical );
+
+		resx = Math.round( resx / 2 );
+
+		resy = Math.round( resy / 2 );
+
+	}
+
+	// luminosity high pass material
+
+	if ( _shaders_LuminosityHighPassShader_js__WEBPACK_IMPORTED_MODULE_3__["LuminosityHighPassShader"] === undefined )
+		console.error( "UnrealBloomPass relies on LuminosityHighPassShader" );
+
+	var highPassShader = _shaders_LuminosityHighPassShader_js__WEBPACK_IMPORTED_MODULE_3__["LuminosityHighPassShader"];
+	this.highPassUniforms = _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["UniformsUtils"].clone( highPassShader.uniforms );
+
+	this.highPassUniforms[ "luminosityThreshold" ].value = threshold;
+	this.highPassUniforms[ "smoothWidth" ].value = 0.01;
+
+	this.materialHighPassFilter = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["ShaderMaterial"]( {
+		uniforms: this.highPassUniforms,
+		vertexShader: highPassShader.vertexShader,
+		fragmentShader: highPassShader.fragmentShader,
+		defines: {}
+	} );
+
+	// Gaussian Blur Materials
+	this.separableBlurMaterials = [];
+	var kernelSizeArray = [ 3, 5, 7, 9, 11 ];
+	var resx = Math.round( this.resolution.x / 2 );
+	var resy = Math.round( this.resolution.y / 2 );
+
+	for ( var i = 0; i < this.nMips; i ++ ) {
+
+		this.separableBlurMaterials.push( this.getSeperableBlurMaterial( kernelSizeArray[ i ] ) );
+
+		this.separableBlurMaterials[ i ].uniforms[ "texSize" ].value = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( resx, resy );
+
+		resx = Math.round( resx / 2 );
+
+		resy = Math.round( resy / 2 );
+
+	}
+
+	// Composite material
+	this.compositeMaterial = this.getCompositeMaterial( this.nMips );
+	this.compositeMaterial.uniforms[ "blurTexture1" ].value = this.renderTargetsVertical[ 0 ].texture;
+	this.compositeMaterial.uniforms[ "blurTexture2" ].value = this.renderTargetsVertical[ 1 ].texture;
+	this.compositeMaterial.uniforms[ "blurTexture3" ].value = this.renderTargetsVertical[ 2 ].texture;
+	this.compositeMaterial.uniforms[ "blurTexture4" ].value = this.renderTargetsVertical[ 3 ].texture;
+	this.compositeMaterial.uniforms[ "blurTexture5" ].value = this.renderTargetsVertical[ 4 ].texture;
+	this.compositeMaterial.uniforms[ "bloomStrength" ].value = strength;
+	this.compositeMaterial.uniforms[ "bloomRadius" ].value = 0.1;
+	this.compositeMaterial.needsUpdate = true;
+
+	var bloomFactors = [ 1.0, 0.8, 0.6, 0.4, 0.2 ];
+	this.compositeMaterial.uniforms[ "bloomFactors" ].value = bloomFactors;
+	this.bloomTintColors = [ new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"]( 1, 1, 1 ), new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"]( 1, 1, 1 ), new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"]( 1, 1, 1 ),
+							 new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"]( 1, 1, 1 ), new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector3"]( 1, 1, 1 ) ];
+	this.compositeMaterial.uniforms[ "bloomTintColors" ].value = this.bloomTintColors;
+
+	// copy material
+	if ( _shaders_CopyShader_js__WEBPACK_IMPORTED_MODULE_2__["CopyShader"] === undefined ) {
+
+		console.error( "UnrealBloomPass relies on CopyShader" );
+
+	}
+
+	var copyShader = _shaders_CopyShader_js__WEBPACK_IMPORTED_MODULE_2__["CopyShader"];
+
+	this.copyUniforms = _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["UniformsUtils"].clone( copyShader.uniforms );
+	this.copyUniforms[ "opacity" ].value = 1.0;
+
+	this.materialCopy = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["ShaderMaterial"]( {
+		uniforms: this.copyUniforms,
+		vertexShader: copyShader.vertexShader,
+		fragmentShader: copyShader.fragmentShader,
+		blending: _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["AdditiveBlending"],
+		depthTest: false,
+		depthWrite: false,
+		transparent: true
+	} );
+
+	this.enabled = true;
+	this.needsSwap = false;
+
+	this.oldClearColor = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Color"]();
+	this.oldClearAlpha = 1;
+
+	this.basic = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["MeshBasicMaterial"]();
+
+	this.fsQuad = new _postprocessing_Pass_js__WEBPACK_IMPORTED_MODULE_1__["Pass"].FullScreenQuad( null );
+
+};
+
+UnrealBloomPass.prototype = Object.assign( Object.create( _postprocessing_Pass_js__WEBPACK_IMPORTED_MODULE_1__["Pass"].prototype ), {
+
+	constructor: UnrealBloomPass,
+
+	dispose: function () {
+
+		for ( var i = 0; i < this.renderTargetsHorizontal.length; i ++ ) {
+
+			this.renderTargetsHorizontal[ i ].dispose();
+
+		}
+
+		for ( var i = 0; i < this.renderTargetsVertical.length; i ++ ) {
+
+			this.renderTargetsVertical[ i ].dispose();
+
+		}
+
+		this.renderTargetBright.dispose();
+
+	},
+
+	setSize: function ( width, height ) {
+
+		var resx = Math.round( width / 2 );
+		var resy = Math.round( height / 2 );
+
+		this.renderTargetBright.setSize( resx, resy );
+
+		for ( var i = 0; i < this.nMips; i ++ ) {
+
+			this.renderTargetsHorizontal[ i ].setSize( resx, resy );
+			this.renderTargetsVertical[ i ].setSize( resx, resy );
+
+			this.separableBlurMaterials[ i ].uniforms[ "texSize" ].value = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( resx, resy );
+
+			resx = Math.round( resx / 2 );
+			resy = Math.round( resy / 2 );
+
+		}
+
+	},
+
+	render: function ( renderer, writeBuffer, readBuffer, deltaTime, maskActive ) {
+
+		this.oldClearColor.copy( renderer.getClearColor() );
+		this.oldClearAlpha = renderer.getClearAlpha();
+		var oldAutoClear = renderer.autoClear;
+		renderer.autoClear = false;
+
+		renderer.setClearColor( this.clearColor, 0 );
+
+		if ( maskActive ) renderer.state.buffers.stencil.setTest( false );
+
+		// Render input to screen
+
+		if ( this.renderToScreen ) {
+
+			this.fsQuad.material = this.basic;
+			this.basic.map = readBuffer.texture;
+
+			renderer.setRenderTarget( null );
+			renderer.clear();
+			this.fsQuad.render( renderer );
+
+		}
+
+		// 1. Extract Bright Areas
+
+		this.highPassUniforms[ "tDiffuse" ].value = readBuffer.texture;
+		this.highPassUniforms[ "luminosityThreshold" ].value = this.threshold;
+		this.fsQuad.material = this.materialHighPassFilter;
+
+		renderer.setRenderTarget( this.renderTargetBright );
+		renderer.clear();
+		this.fsQuad.render( renderer );
+
+		// 2. Blur All the mips progressively
+
+		var inputRenderTarget = this.renderTargetBright;
+
+		for ( var i = 0; i < this.nMips; i ++ ) {
+
+			this.fsQuad.material = this.separableBlurMaterials[ i ];
+
+			this.separableBlurMaterials[ i ].uniforms[ "colorTexture" ].value = inputRenderTarget.texture;
+			this.separableBlurMaterials[ i ].uniforms[ "direction" ].value = UnrealBloomPass.BlurDirectionX;
+			renderer.setRenderTarget( this.renderTargetsHorizontal[ i ] );
+			renderer.clear();
+			this.fsQuad.render( renderer );
+
+			this.separableBlurMaterials[ i ].uniforms[ "colorTexture" ].value = this.renderTargetsHorizontal[ i ].texture;
+			this.separableBlurMaterials[ i ].uniforms[ "direction" ].value = UnrealBloomPass.BlurDirectionY;
+			renderer.setRenderTarget( this.renderTargetsVertical[ i ] );
+			renderer.clear();
+			this.fsQuad.render( renderer );
+
+			inputRenderTarget = this.renderTargetsVertical[ i ];
+
+		}
+
+		// Composite All the mips
+
+		this.fsQuad.material = this.compositeMaterial;
+		this.compositeMaterial.uniforms[ "bloomStrength" ].value = this.strength;
+		this.compositeMaterial.uniforms[ "bloomRadius" ].value = this.radius;
+		this.compositeMaterial.uniforms[ "bloomTintColors" ].value = this.bloomTintColors;
+
+		renderer.setRenderTarget( this.renderTargetsHorizontal[ 0 ] );
+		renderer.clear();
+		this.fsQuad.render( renderer );
+
+		// Blend it additively over the input texture
+
+		this.fsQuad.material = this.materialCopy;
+		this.copyUniforms[ "tDiffuse" ].value = this.renderTargetsHorizontal[ 0 ].texture;
+
+		if ( maskActive ) renderer.state.buffers.stencil.setTest( true );
+
+		if ( this.renderToScreen ) {
+
+			renderer.setRenderTarget( null );
+			this.fsQuad.render( renderer );
+
+		} else {
+
+			renderer.setRenderTarget( readBuffer );
+			this.fsQuad.render( renderer );
+
+		}
+
+		// Restore renderer settings
+
+		renderer.setClearColor( this.oldClearColor, this.oldClearAlpha );
+		renderer.autoClear = oldAutoClear;
+
+	},
+
+	getSeperableBlurMaterial: function ( kernelRadius ) {
+
+		return new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["ShaderMaterial"]( {
+
+			defines: {
+				"KERNEL_RADIUS": kernelRadius,
+				"SIGMA": kernelRadius
+			},
+
+			uniforms: {
+				"colorTexture": { value: null },
+				"texSize": { value: new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( 0.5, 0.5 ) },
+				"direction": { value: new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( 0.5, 0.5 ) }
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\n\
+				void main() {\n\
+					vUv = uv;\n\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"#include <common>\
+				varying vec2 vUv;\n\
+				uniform sampler2D colorTexture;\n\
+				uniform vec2 texSize;\
+				uniform vec2 direction;\
+				\
+				float gaussianPdf(in float x, in float sigma) {\
+					return 0.39894 * exp( -0.5 * x * x/( sigma * sigma))/sigma;\
+				}\
+				void main() {\n\
+					vec2 invSize = 1.0 / texSize;\
+					float fSigma = float(SIGMA);\
+					float weightSum = gaussianPdf(0.0, fSigma);\
+					vec3 diffuseSum = texture2D( colorTexture, vUv).rgb * weightSum;\
+					for( int i = 1; i < KERNEL_RADIUS; i ++ ) {\
+						float x = float(i);\
+						float w = gaussianPdf(x, fSigma);\
+						vec2 uvOffset = direction * invSize * x;\
+						vec3 sample1 = texture2D( colorTexture, vUv + uvOffset).rgb;\
+						vec3 sample2 = texture2D( colorTexture, vUv - uvOffset).rgb;\
+						diffuseSum += (sample1 + sample2) * w;\
+						weightSum += 2.0 * w;\
+					}\
+					gl_FragColor = vec4(diffuseSum/weightSum, 1.0);\n\
+				}"
+		} );
+
+	},
+
+	getCompositeMaterial: function ( nMips ) {
+
+		return new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["ShaderMaterial"]( {
+
+			defines: {
+				"NUM_MIPS": nMips
+			},
+
+			uniforms: {
+				"blurTexture1": { value: null },
+				"blurTexture2": { value: null },
+				"blurTexture3": { value: null },
+				"blurTexture4": { value: null },
+				"blurTexture5": { value: null },
+				"dirtTexture": { value: null },
+				"bloomStrength": { value: 1.0 },
+				"bloomFactors": { value: null },
+				"bloomTintColors": { value: null },
+				"bloomRadius": { value: 0.0 }
+			},
+
+			vertexShader:
+				"varying vec2 vUv;\n\
+				void main() {\n\
+					vUv = uv;\n\
+					gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );\n\
+				}",
+
+			fragmentShader:
+				"varying vec2 vUv;\
+				uniform sampler2D blurTexture1;\
+				uniform sampler2D blurTexture2;\
+				uniform sampler2D blurTexture3;\
+				uniform sampler2D blurTexture4;\
+				uniform sampler2D blurTexture5;\
+				uniform sampler2D dirtTexture;\
+				uniform float bloomStrength;\
+				uniform float bloomRadius;\
+				uniform float bloomFactors[NUM_MIPS];\
+				uniform vec3 bloomTintColors[NUM_MIPS];\
+				\
+				float lerpBloomFactor(const in float factor) { \
+					float mirrorFactor = 1.2 - factor;\
+					return mix(factor, mirrorFactor, bloomRadius);\
+				}\
+				\
+				void main() {\
+					gl_FragColor = bloomStrength * ( lerpBloomFactor(bloomFactors[0]) * vec4(bloomTintColors[0], 1.0) * texture2D(blurTexture1, vUv) + \
+													 lerpBloomFactor(bloomFactors[1]) * vec4(bloomTintColors[1], 1.0) * texture2D(blurTexture2, vUv) + \
+													 lerpBloomFactor(bloomFactors[2]) * vec4(bloomTintColors[2], 1.0) * texture2D(blurTexture3, vUv) + \
+													 lerpBloomFactor(bloomFactors[3]) * vec4(bloomTintColors[3], 1.0) * texture2D(blurTexture4, vUv) + \
+													 lerpBloomFactor(bloomFactors[4]) * vec4(bloomTintColors[4], 1.0) * texture2D(blurTexture5, vUv) );\
+				}"
+		} );
+
+	}
+
+} );
+
+UnrealBloomPass.BlurDirectionX = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( 1.0, 0.0 );
+UnrealBloomPass.BlurDirectionY = new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( 0.0, 1.0 );
+
+
+
+
+/***/ }),
+
+/***/ "./node_modules/three/examples/jsm/shaders/ConvolutionShader.js":
+/*!**********************************************************************!*\
+  !*** ./node_modules/three/examples/jsm/shaders/ConvolutionShader.js ***!
+  \**********************************************************************/
+/*! exports provided: ConvolutionShader */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ConvolutionShader", function() { return ConvolutionShader; });
+/* harmony import */ var _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../build/three.module.js */ "./node_modules/three/build/three.module.js");
+/**
+ * @author alteredq / http://alteredqualia.com/
+ *
+ * Convolution shader
+ * ported from o3d sample to WebGL / GLSL
+ * http://o3d.googlecode.com/svn/trunk/samples/convolution.html
+ */
+
+
+
+var ConvolutionShader = {
+
+	defines: {
+
+		"KERNEL_SIZE_FLOAT": "25.0",
+		"KERNEL_SIZE_INT": "25"
+
+	},
+
+	uniforms: {
+
+		"tDiffuse": { value: null },
+		"uImageIncrement": { value: new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Vector2"]( 0.001953125, 0.0 ) },
+		"cKernel": { value: [] }
+
+	},
+
+	vertexShader: [
+
+		"uniform vec2 uImageIncrement;",
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+		"	vUv = uv - ( ( KERNEL_SIZE_FLOAT - 1.0 ) / 2.0 ) * uImageIncrement;",
+		"	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+
+		"}"
+
+	].join( "\n" ),
+
+	fragmentShader: [
+
+		"uniform float cKernel[ KERNEL_SIZE_INT ];",
+
+		"uniform sampler2D tDiffuse;",
+		"uniform vec2 uImageIncrement;",
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+		"	vec2 imageCoord = vUv;",
+		"	vec4 sum = vec4( 0.0, 0.0, 0.0, 0.0 );",
+
+		"	for( int i = 0; i < KERNEL_SIZE_INT; i ++ ) {",
+
+		"		sum += texture2D( tDiffuse, imageCoord ) * cKernel[ i ];",
+		"		imageCoord += uImageIncrement;",
+
+		"	}",
+
+		"	gl_FragColor = sum;",
+
+		"}"
+
+
+	].join( "\n" ),
+
+	buildKernel: function ( sigma ) {
+
+		// We lop off the sqrt(2 * pi) * sigma term, since we're going to normalize anyway.
+
+		function gauss( x, sigma ) {
+
+			return Math.exp( - ( x * x ) / ( 2.0 * sigma * sigma ) );
+
+		}
+
+		var i, values, sum, halfWidth, kMaxKernelSize = 25, kernelSize = 2 * Math.ceil( sigma * 3.0 ) + 1;
+
+		if ( kernelSize > kMaxKernelSize ) kernelSize = kMaxKernelSize;
+		halfWidth = ( kernelSize - 1 ) * 0.5;
+
+		values = new Array( kernelSize );
+		sum = 0.0;
+		for ( i = 0; i < kernelSize; ++ i ) {
+
+			values[ i ] = gauss( i - halfWidth, sigma );
+			sum += values[ i ];
+
+		}
+
+		// normalize the kernel
+
+		for ( i = 0; i < kernelSize; ++ i ) values[ i ] /= sum;
+
+		return values;
+
+	}
+
+};
 
 
 
@@ -60860,6 +60832,89 @@ var FXAAShader = {
 		"  // TODO avoid querying texture twice for same texel",
 		"  gl_FragColor.a = texture2D(tDiffuse, vUv).a;",
 		"}"
+	].join( "\n" )
+
+};
+
+
+
+
+/***/ }),
+
+/***/ "./node_modules/three/examples/jsm/shaders/LuminosityHighPassShader.js":
+/*!*****************************************************************************!*\
+  !*** ./node_modules/three/examples/jsm/shaders/LuminosityHighPassShader.js ***!
+  \*****************************************************************************/
+/*! exports provided: LuminosityHighPassShader */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "LuminosityHighPassShader", function() { return LuminosityHighPassShader; });
+/* harmony import */ var _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../../build/three.module.js */ "./node_modules/three/build/three.module.js");
+/**
+ * @author bhouston / http://clara.io/
+ *
+ * Luminosity
+ * http://en.wikipedia.org/wiki/Luminosity
+ */
+
+
+
+var LuminosityHighPassShader = {
+
+	shaderID: "luminosityHighPass",
+
+	uniforms: {
+
+		"tDiffuse": { value: null },
+		"luminosityThreshold": { value: 1.0 },
+		"smoothWidth": { value: 1.0 },
+		"defaultColor": { value: new _build_three_module_js__WEBPACK_IMPORTED_MODULE_0__["Color"]( 0x000000 ) },
+		"defaultOpacity": { value: 0.0 }
+
+	},
+
+	vertexShader: [
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+		"	vUv = uv;",
+
+		"	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );",
+
+		"}"
+
+	].join( "\n" ),
+
+	fragmentShader: [
+
+		"uniform sampler2D tDiffuse;",
+		"uniform vec3 defaultColor;",
+		"uniform float defaultOpacity;",
+		"uniform float luminosityThreshold;",
+		"uniform float smoothWidth;",
+
+		"varying vec2 vUv;",
+
+		"void main() {",
+
+		"	vec4 texel = texture2D( tDiffuse, vUv );",
+
+		"	vec3 luma = vec3( 0.299, 0.587, 0.114 );",
+
+		"	float v = dot( texel.xyz, luma );",
+
+		"	vec4 outputColor = vec4( defaultColor.rgb, defaultOpacity );",
+
+		"	float alpha = smoothstep( luminosityThreshold, luminosityThreshold + smoothWidth, v );",
+
+		"	gl_FragColor = mix( outputColor, texel, alpha );",
+
+		"}"
+
 	].join( "\n" )
 
 };

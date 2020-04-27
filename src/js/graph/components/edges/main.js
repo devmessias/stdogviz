@@ -108,18 +108,21 @@ export default class Edges {
             //let geometry = new THREE.Geometry();
             //  let i = 0;
             //if (i<1) return
+            //
             const nodeInId = nodesData.id[s]
             const nodeOutId = nodesData.id[t]
-
+            if ((Math.random())>-1){
             //let edgeName = `${nodeInId}-to-${nodeOutId}`
+            //
             f(positions, t)
             f(positions, s)
             //let [x, y, z] = nodesData.pos[t]
             //positions.push( x, y, z );
             //[x, y, z] = nodesData.pos[s]
             //positions.push( x, y, z );
-            colors.push(...nodesData.color[t])
-            colors.push(...nodesData.color[s])
+            //colors.push(...nodesData.color[t])
+            //colors.push(...nodesData.color[s])
+            colors.push(...[1, 1, 1, 1, 1,1])
             //colors.push(0.8);
             //colors.push(0.8);
             //colors.push(0.8);
@@ -128,6 +131,8 @@ export default class Edges {
             //colors.push(0.8);
 
 
+
+        }
 
         }
         this.positions = positions;

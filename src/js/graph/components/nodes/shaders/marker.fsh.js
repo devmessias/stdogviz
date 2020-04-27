@@ -150,9 +150,10 @@ function getShading(marker){
 
         vec3 normal = normalize(vec3(p.xy, sdf));
         vec3 direction = normalize(vec3(1.0, 1.0, 1.0));
-        float diffuse = max(0.0, dot(direction, normal));
-        float specular = pow(diffuse, 25.0);
+        float diffuse = max(0.25, dot(direction, normal));
+        float specular = pow(diffuse, 15.0);
         color = vec3(max(diffuse*color, specular*vec3(1.0)));
+        //color = vec3(diffuse*color);
     `
     return shadingStr;
 
@@ -189,8 +190,8 @@ export function getMarkerFragmentShader(marker, nodesGroupName='main'){
         ${getDistFunction(marker)}
         if (sdf<0.0) discard;
 
-        float edge0 = 0.0;
-        float edge1 = minSdf;
+        //float edge0 = 0.0;
+        //float edge1 = minSdf;
         float opacity2 = opacity;
         //if (opacity<1.0) opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), 0.01, opacity) + 0.1;
         ${getShading(marker)}
@@ -208,4 +209,15 @@ export function getMarkerFragmentShader(marker, nodesGroupName='main'){
     `
 }
 
-export const availableMarkers = ['o', '3do', 's', 'd', '^' , 'p', 'h', 's6', '+', 'x'];
+export const availableMarkers = {
+    'Circle': 'o',
+    'Sphere' :'3do',
+    'Square': 's',
+    'Rhombus' : 'd',
+    'Triangle' : '^' ,
+    'Petagon' : 'p',
+    'Hexagon' : 'h',
+    'Star' : 's6',
+    'Cross' :'+',
+    'X' :'x'
+};

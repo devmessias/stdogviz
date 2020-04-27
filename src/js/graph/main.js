@@ -1,33 +1,50 @@
 // Global imports -
 import * as THREE from "three";
-//import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls';
 
 import alertify  from "alertifyjs"
 
-// Components
 import Renderer from "./components/renderer/main";
-//import PickCamera from "./components/pick";
 import Nodes from "./components/nodes/main";
 import Edges from "./components/edges/main";
 
-
-// User Interaction
 import Keyboard from "./interactions/keyboard";
 import DatGUI from './interactions/datGUI';
 
+
+/**
+ * Random select a element of a given array
+ * @param  {string}
+ * @return {Object} A random choiced element of the given array
+ */
 export default class Graph {
+    /**
+     * @param  {string} Id of Canvas DOMElement
+     * @param  {string} Id of Canvas DOMElement
+     * @param  {bool}
+     * @param  {bool} If the graph should be ploted in 2d
+     * @return {Object} A random choiced element of the given array
+     */
     constructor(
         idCanvasHTML,
         Config,
         keyboardPressFunction,
         use2d=false,
+        useHighQuality=true,
+        useBloom=true,
+        useStats=true,
+        camera={
+            fov: 40,
+            near: 2,
+            far: 1000,
+            aspect: 1,
+        },
     ) {
-
-
         this.Config = Config
         this.use2d = use2d;
+        this.useStats = useStats;
+        this.useHighQuality = useHighQuality;
+        this.useBloom = useBloom;
         this.idCanvasHTML = idCanvasHTML
         this.canvas = document.getElementById(`${idCanvasHTML}`);
         this.container = document.getElementById(`container${idCanvasHTML}`);
@@ -37,7 +54,7 @@ export default class Graph {
 
         }else{
             this.camera = new THREE.PerspectiveCamera(
-                Config.camera.fov, Config.camera.aspect, Config.camera.near, Config.camera.far);
+                camera.fov, camera.aspect, camera.near, camera.far);
         }
 
         this.scene = new THREE.Scene();
@@ -80,7 +97,6 @@ export default class Graph {
         this.controls.enableKeys=true;
         this.controls.screenSpacePanning = true;
         //this.controls.update();
-
         if(this.use2d){
 
             this.controls.enableRotate=false;
@@ -89,7 +105,14 @@ export default class Graph {
             //this.controls.maxAzimuthAngle = 0; // radians
 
         }
-        this.renderer = new Renderer(this.scene, this.controls, this.container, this.canvas, this.camera, this.state);
+
+        console.group("Render Init")
+        this.renderer = new Renderer(
+            this.useHighQuality,
+            this.useBloom,
+            this.useStats,
+            this.scene, this.controls, this.container, this.canvas, this.camera, this.state);
+        console.groupEnd();
 
         if (this.Config.useGuiControl)
             this.datGui = new DatGUI(
@@ -100,8 +123,8 @@ export default class Graph {
                 this.nodes,
                 this.edges,
                 this.Config,
-                //bloomPassEdges,edgesBloomScene,
                 this.state);
+
         if (this.Config.useKeyboard)
             this.keyboardInteraction = new Keyboard(
                 this.canvas,
@@ -120,22 +143,39 @@ export default class Graph {
             //this.camera.add(light);
         //}
     }
+    /**
+     * Random select a element of a given array
+     */
     ressetLook(){
         let position = this.edges.instancedEdges.geometry.boundingSphere.center
         this.camera.position.z = 4*this.edges.instancedEdges.geometry.boundingSphere.radius
+        //this.camera.position.z = 4;
         this.camera.lookAt(position)
         this.camera.updateProjectionMatrix();
         this.renderer.render()
     }
+    /**
+     * Random select a element of a given array
+     */
     deleteGraph(){
         this.nodes.deleteAllNodes()
         this.edges.deleteAllEdges()
     }
+    /**
+     * @param  {string} Id of Canvas DOMElement
+     * @param  {string} Id of Canvas DOMElement
+     * @param  {bool}
+     * @param  {bool} If the graph should be ploted in 2d
+     * @return {Object} A random choiced element of the given array
+     */
     getURI(width, height, transparency){
         transparency = transparency || false;
         const uri = this.renderer.getURI(width, height, transparency);
         this.uri = uri
     }
+    /**
+     * Random select a element of a given array
+     */
     stopRender(){
         //this.deleteGraph();
         this.renderer.stop();

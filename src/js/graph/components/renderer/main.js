@@ -3,14 +3,15 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
-import { CopyShader } from 'three/examples/jsm/shaders/CopyShader.js';
+
+import {BloomPass} from 'three/examples/jsm/postprocessing/BloomPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
 import alertify from 'alertifyjs';
 
-import Config from '../../../data/config';
-
 import Stats from './../../helpers/stats';
+
 
 function dataURIToBlob( dataURI ) {
     const binStr = window.atob( dataURI.split( ',' )[1] );
@@ -46,7 +47,11 @@ function defaultFileName (ext) {
 
 
 export default class Renderer {
-    constructor(scene, controls, container, canvas, camera, appState ) {
+    constructor(
+        useHighQuality,
+        useBloom,
+        useStats,
+        scene, controls, container, canvas, camera, appState ) {
         this.scene = scene;
         this.controls = controls;
         this.canvas = canvas;
@@ -55,50 +60,48 @@ export default class Renderer {
         this.appState = appState
 
         //renderer.toneMapping = THREE.ReinhardToneMapping;
-
+        this.useHighQuality = useHighQuality;
+        this.useBloom = useBloom;
+        this.useStats = useStats;
         // Create WebGL render
         this.renderer = new THREE.WebGLRenderer(
             {
                 canvas: canvas,
-                antialias: Config.render.antialias,
+                antialias: useHighQuality,
                 preserveDrawingBuffer: true,
                 alpha:true
             }
         );
-	    this.renderer.autoClear = false;
-        if(Config.useStats) {
+        this.renderer.autoClear = false;
+        if(this.useStats) {
             this.stats = new Stats(this.renderer);
             this.stats.setUp();
         }
 
-
         this.renderer.setPixelRatio(window.devicePixelRatio); // For retina
 
 
-        //this.renderer.shadowMap.enabled = false;
-        //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.enabled = false;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-        // Get anisotropy for textures
-        Config.maxAnisotropy = this.renderer.getMaxAnisotropy();
 
         // Initial size update set to canvas canvas
         //
+        if (useHighQuality || useBloom){
+            this.initComposer()
+        }
+        if (useBloom){
+            this.initBloomComposer()
+        }
+        if (useHighQuality){
+            this.initFXAAComposer()
+        }
 
-        let fxaaPass = new ShaderPass( FXAAShader );
+        //if (useBloom){
 
-        var pixelRatio = this.renderer.getPixelRatio();
-
-        var renderPass = new RenderPass( scene, camera );
-        fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( this.canvas.offsetWidth * pixelRatio );
-        fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( this.canvas.offsetHeight * pixelRatio );
-        //fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / 1000000;
-        //fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / 1000000;
-
-        this.fxaaPass = fxaaPass
-
-        this.composer = new EffectComposer( this.renderer );
-        this.composer.addPass( renderPass );
-        this.composer.addPass( fxaaPass );
+                //if(highQuality){
+        //
+                    //}
 
         //
 
@@ -115,11 +118,49 @@ export default class Renderer {
         this.takeScreenshot = this.takeScreenshot.bind(this)
         const btnSave = document.getElementById("btnSaveImage");
         if(btnSave)
-            btnSave.addEventListener("click",  event=>this.takeScreenshot())
+        btnSave.addEventListener("click",  event=>this.takeScreenshot())
 
 
-        var renderPass = new RenderPass( scene, camera );
 
+
+    }
+    initComposer(){
+        this.composer = new EffectComposer( this.renderer );
+        let renderPass = new RenderPass( this.scene, this.camera );
+        this.composer.addPass( renderPass );
+
+    }
+    initBloomComposer(){
+        console.info('Init Bloom');
+
+        this.renderer.toneMapping = THREE.ReinhardToneMapping;
+        const bloomPass = new BloomPass(
+            1,    // strength
+            25,   // kernel size
+            4,    // sigma ?
+            256,  // blur render target resolution
+        );
+        const strength = 1;
+        const radius = 2;
+        const threshold = 0;
+        this.bloomPass = new UnrealBloomPass(
+            new THREE.Vector2( window.innerWidth, window.innerHeight ),
+            strength, radius, threshold );
+        this.composer.addPass(this.bloomPass);
+
+
+    }
+    initFXAAComposer(){
+        console.info('Init FXAA');
+
+        let fxaaPass = new ShaderPass( FXAAShader );
+
+        const pixelRatio = this.renderer.getPixelRatio();
+
+        fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( this.canvas.offsetWidth * pixelRatio );
+        fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( this.canvas.offsetHeight * pixelRatio );
+        this.fxaaPass = fxaaPass
+        this.composer.addPass( fxaaPass );
 
     }
 
@@ -149,14 +190,21 @@ export default class Renderer {
         heightRender= heightRender ||this.container.clientHeight
 
         this.setCameraAspect(widthRender, heightRender, keepPos)
-        this.renderer.setSize(widthRender, heightRender, );
 
-        this.composer.setSize( widthRender, heightRender );
+        if (this.useHighQuality || this.useBloom){
 
-        var pixelRatio = this.renderer.getPixelRatio();
+            this.renderer.setSize(widthRender, heightRender, );
+            this.composer.setSize( widthRender, heightRender );
+        }else{
+            this.renderer.setSize(widthRender, heightRender, );
+        }
 
-        this.fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( widthRender * pixelRatio );
-        this.fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( heightRender * pixelRatio );
+
+        if (this.useHighQuality){
+            const pixelRatio = this.renderer.getPixelRatio();
+            this.fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( widthRender * pixelRatio );
+            this.fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( heightRender * pixelRatio );
+        }
         //this.appState.originalAspect  = aspect
         this.render()
         //const pixelRatio = window.devicePixelRatio;
@@ -190,13 +238,19 @@ export default class Renderer {
         // Renders scene to canvas target
         // this.pickHelper.pick( scene, camera, 0)
 
-        if(Config.useStats)
+        if(this.useStats)
             Stats.start();
 
         //this.controls.update();
-        //this.renderer.render(this.scene, this.camera);
-        this.composer.render();
-        if(Config.useStats)
+        //
+        if (this.useHighQuality || this.useBloom){
+
+            //this.renderer.render(this.scene, this.camera);
+            this.composer.render();
+        }else{
+            this.renderer.render(this.scene, this.camera);
+        }
+        if(this.useStats)
             Stats.end();
 
 
@@ -231,7 +285,10 @@ export default class Renderer {
         }
         this.renderer.setSize(  widthImage, heightImage );
 
-        this.renderer.render( this.scene, this.camera, null, false );
+        //this.renderer.render( this.scene, this.camera, null, false );
+
+        this.composer.setSize( widthImage, heightImage );
+        this.composer.render();
 
         const dataURI = this.canvas.toDataURL( 'image/png', 1.0 );
 

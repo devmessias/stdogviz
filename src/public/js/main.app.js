@@ -70,8 +70,17 @@ function listenerFunction(event) {
       clearInterval(intervalGetGraph); //graphObj.state.defaultProps = message.defaultProps
       //
 
+      console.group('getGraph');
+      console.time('creatingEdges');
+      console.group('createEdges');
       graphObj.edges.createEdges(message.nodes, message.edges, message.defaultProps);
+      console.groupEnd();
+      console.timeEnd('creatingEdges');
+      console.group('createNodes');
+      console.time('creatingNodes');
       graphObj.nodes.createNodes(message.nodes, true);
+      console.timeEnd('creatingNodes');
+      console.groupEnd();
 
       if (graphObj.state.firstLoad) {
         graphObj.firstLoad = false;
@@ -79,17 +88,17 @@ function listenerFunction(event) {
         clearInterval(intervalGetGraph);
       }
 
-      var nodes = JSON.parse(JSON.stringify(message.nodes));
-      nodes.pos = nodes.pos.map(function (p) {
-        return p * 0.3;
-      });
-      graphObj.nodes.createNodes(nodes, false); //
+      graphObj.nodes.stopUpdate(); //let nodes = JSON.parse(JSON.stringify(message.nodes))
+      //nodes.pos = nodes.pos.map((p)=>p*0.3);
+      //graphObj.nodes.createNodes(nodes, false);
+      //
       //camera.position.set(0, nodes0.max_vals[2] * (1 + 2), 0);
 
       graphObj.datGui.updateNodeColorProp(message.nodes.props);
       graphObj.datGui.updateComunityField(Object.keys(graphObj.nodes.nodesGroup)); //datGui.updateEdgeColorProp(message.edges.props)
       //camera.lookAt(nodes0.instancedNodes);
 
+      console.groupEnd();
       break;
 
     case "addNodes":
@@ -122,14 +131,23 @@ function listenerFunction(event) {
   }
 }
 
+var queryString = window.location.search;
+var urlParams = new URLSearchParams(queryString);
+console.info(queryString);
+var useHighQuality = urlParams.has('highQuality') ? urlParams.get('highQuality') == '1' : true;
+var useBloom = urlParams.has('bloom') ? urlParams.get('bloom') == '1' : true;
 _data_config__WEBPACK_IMPORTED_MODULE_1__["default"].useGuiControl = true;
-var graphObj = new _graph_main__WEBPACK_IMPORTED_MODULE_0__["default"]("graphCanvas", _data_config__WEBPACK_IMPORTED_MODULE_1__["default"], keyboardPressFunction);
+var graphObj = new _graph_main__WEBPACK_IMPORTED_MODULE_0__["default"]("graphCanvas", _data_config__WEBPACK_IMPORTED_MODULE_1__["default"], keyboardPressFunction, false, useHighQuality, useBloom);
 window.graphObjVar = graphObj;
 graphObj.init();
-var dataPoolSocket = new _connections_dataPool__WEBPACK_IMPORTED_MODULE_2__["default"](listenerFunction);
+console.group('Socket Conection');
+var address = urlParams.has('address') ? urlParams.has('address') : 'localhost:6688';
+console.info('Address:', address);
+var dataPoolSocket = new _connections_dataPool__WEBPACK_IMPORTED_MODULE_2__["default"](address, listenerFunction);
 var intervalGetGraph = setInterval(function () {
   dataPoolSocket.getGraph();
 }, 1000);
+console.groupEnd();
 
 /***/ }),
 
@@ -156,10 +174,11 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 
 var DataPool = /*#__PURE__*/function () {
-  function DataPool(listenerFunction) {
+  function DataPool(address, listenerFunction) {
     _classCallCheck(this, DataPool);
 
-    this.ws = new WebSocket("ws://".concat(_data_config__WEBPACK_IMPORTED_MODULE_1__["default"].address, "/"));
+    this.address = address;
+    this.ws = new WebSocket("ws://".concat(address, "/"));
 
     this.ws.onopen = function (event) {
       alertifyjs__WEBPACK_IMPORTED_MODULE_0___default.a.success("opened connection");
@@ -253,8 +272,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony default export */ __webpack_exports__["default"] = ({
   address: "127.0.0.1:6688",
   scene: {
-    //color: 0xe9e9ff
-    color: 0xffffff
+    color: 0x000 //color: 0xffffff
+
   },
   isDev: true,
   render: {
@@ -268,6 +287,12 @@ __webpack_require__.r(__webpack_exports__);
   isMouseMoving: false,
   isMouseOver: false,
   maxAnisotropy: 2,
+  bloomPass: {
+    exposure: 1,
+    strength: 0.5,
+    threshold: 0,
+    radius: 0
+  },
   dpr: 1,
   layers: {
     0: {},
@@ -552,22 +577,28 @@ var Edges = /*#__PURE__*/function () {
           //let geometry = new THREE.Geometry();
           //  let i = 0;
           //if (i<1) return
+          //
           var nodeInId = nodesData.id[s];
-          var nodeOutId = nodesData.id[t]; //let edgeName = `${nodeInId}-to-${nodeOutId}`
+          var nodeOutId = nodesData.id[t];
 
-          f(positions, t);
-          f(positions, s); //let [x, y, z] = nodesData.pos[t]
-          //positions.push( x, y, z );
-          //[x, y, z] = nodesData.pos[s]
-          //positions.push( x, y, z );
+          if (Math.random() > -1) {
+            //let edgeName = `${nodeInId}-to-${nodeOutId}`
+            //
+            f(positions, t);
+            f(positions, s); //let [x, y, z] = nodesData.pos[t]
+            //positions.push( x, y, z );
+            //[x, y, z] = nodesData.pos[s]
+            //positions.push( x, y, z );
+            //colors.push(...nodesData.color[t])
+            //colors.push(...nodesData.color[s])
 
-          colors.push.apply(colors, _toConsumableArray(nodesData.color[t]));
-          colors.push.apply(colors, _toConsumableArray(nodesData.color[s])); //colors.push(0.8);
-          //colors.push(0.8);
-          //colors.push(0.8);
-          //colors.push(0.8);
-          //colors.push(0.8);
-          //colors.push(0.8);
+            colors.push.apply(colors, [1, 1, 1, 1, 1, 1]); //colors.push(0.8);
+            //colors.push(0.8);
+            //colors.push(0.8);
+            //colors.push(0.8);
+            //colors.push(0.8);
+            //colors.push(0.8);
+          }
         }
       } catch (err) {
         _iterator2.e(err);
@@ -641,6 +672,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _shaders_markerImg_fsh_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./shaders/markerImg.fsh.js */ "./src/js/graph/components/nodes/shaders/markerImg.fsh.js");
 /* harmony import */ var _shaders_marker_vsh_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./shaders/marker.vsh.js */ "./src/js/graph/components/nodes/shaders/marker.vsh.js");
 /* harmony import */ var _shaders_marker_fsh_js__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./shaders/marker.fsh.js */ "./src/js/graph/components/nodes/shaders/marker.fsh.js");
+/* harmony import */ var _helpers_tools__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../../helpers/tools */ "./src/js/graph/helpers/tools.js");
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _unsupportedIterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -676,72 +708,65 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 
 
- //import {fragmentShaderFixedColor, vertexShader, fragmentShader} from "./shaders"
 
-var randomString = function randomString() {
-  return Math.random().toString(36).substring(2, 15);
-};
 
-;
+/**
+ * Class representing the Nodes of the Graph
+ * */
 
 var Nodes = /*#__PURE__*/function () {
+  /**
+   * Create a empty nodes object
+   * @param {object} scene - THREE.scene
+   * @param {bool} use2d - If the nodes should be ploted in 2d
+   */
   function Nodes(scene, use2d) {
     _classCallCheck(this, Nodes);
 
-    this.createNodes = this.createNodes.bind(this);
     this.scene = scene;
-    this.nodesGroup = {};
-    this.comunity = '';
     this.use2d = use2d;
-  } //updateNodesSingle(nodesData) {
-  //for (const [nodeName, props] of Object.entries(nodesData)){
-  //let node = this.nodes[nodeName];
-  //const pos = props["pos"]
-  //// let node = this.scene.getObjectByName(nodeName)
-  ////   if (node) {
-  //node.position.x = pos[0];
-  //node.position.y = pos[1];
-  //node.position.z = pos[2];
-  //// }
-  //}
-  //}
-  //moveNodes(pickedPos, nodesName, dr ) {
-  //for (let index = 0; index < nodesName.length; index++) {
-  ////for (const [nodeName, props] of Object.entries(nodesData)){
-  ////  let idNode = 0;
-  //let node = this.nodes[nodesName[index]];
-  //let pos = node.position
-  //// let node = this.scene.getObjectByName(nodeName)
-  ////   if (node) {
-  ////node.translateX(10)
-  ////node.position.x = pickedPos// pos.x+dr[0];
-  ////node.position.y = pos.y+dr[1];
-  ////node.position.z = pos.z+dr[2];
-  //// }
-  //}
-  //}
-  //deleteNode(nodeId){
-  //if (!(nodeId in this.nodes)) return
-  //this.scene.remove(this.nodes[nodeId])
-  //delete this.nodes[nodeId]
-  //}
+    this.nodesGroup = {}; // This string is used in order to indentify the group of nodes
+    // selected. If the string is empty, then the changes will be applied
+    // across all group of nodes
+
+    this.selectedGroupName = '';
+  }
+  /**
+   * Set the selected group
+   * @param {string} groupName - the name of the group. If the groupName thit not exist
+   *  then set the selecedGroupName as a empty string
+   **/
 
 
   _createClass(Nodes, [{
-    key: "setComunity",
-    value: function setComunity(value) {
-      this.comunity = Object.keys(this.nodesGroup).includes(value) ? value : '';
+    key: "setGroup",
+    value: function setGroup(groupName) {
+      this.selectedGroupName = Object.keys(this.nodesGroup).includes(value) ? value : '';
     }
+    /**
+     * Set the selected group
+     * @param {string} groupName - the name of the group. If the groupName thit not exist
+     *  then set the selecedGroupName as a empty string
+     * @return {array} arr - [[...[string, nodesGroupObj]]
+     **/
+
   }, {
-    key: "getComunity",
-    value: function getComunity() {
-      var arr = this.comunity != '' ? [[this.comunity, this.nodesGroup[this.comunity]]] : Object.entries(this.nodesGroup);
+    key: "getGroup",
+    value: function getGroup() {
+      var allGroups = Object.entries(this.nodesGroup);
+      var arr = this.selectedGroupName != '' ? [[this.selectedGroupName, this.nodesGroup[this.selectedGroupName]]] : allGroups;
       return arr;
     }
+    /**
+     * Set the selected group
+     * @param {string} groupName - the name of the group. If the groupName thit not exist
+     *  then set the selecedGroupName as a empty string
+     **/
+
   }, {
     key: "colorByField",
     value: function colorByField(prop) {
-      var _iterator = _createForOfIteratorHelper(this.getComunity()),
+      var _iterator = _createForOfIteratorHelper(this.getGroup()),
           _step;
 
       try {
@@ -789,7 +814,7 @@ var Nodes = /*#__PURE__*/function () {
     value: function colorByProp(prop) {
       var _this = this;
 
-      var _iterator2 = _createForOfIteratorHelper(this.getComunity()),
+      var _iterator2 = _createForOfIteratorHelper(this.getGroup()),
           _step2;
 
       try {
@@ -806,7 +831,7 @@ var Nodes = /*#__PURE__*/function () {
           });
           var values = nodesObj.nodesData[prop];
           var bufferColors = colors.map(function (color, index) {
-            return [values[index], color];
+            return [values[String(index)], color];
           }) // add the prop to sort by
           .sort(function (_ref, _ref2) {
             var _ref3 = _slicedToArray(_ref, 1),
@@ -867,9 +892,17 @@ var Nodes = /*#__PURE__*/function () {
       nodesObj.mesh.material.needsUpdate = true;
     }
   }, {
-    key: "changeColor",
-    value: function changeColor(colorHEX) {
-      var _iterator3 = _createForOfIteratorHelper(this.getComunity()),
+    key: "updateMarker",
+    value: function updateMarker(marker, nodesGroupName) {
+      var nodesObj = this.nodesGroup[nodesGroupName];
+      nodesObj.mesh.material.vertexShader = Object(_shaders_marker_vsh_js__WEBPACK_IMPORTED_MODULE_6__["getMarkerVertexShader"])(nodesObj.fixedNodeSize, nodesObj.fixedColor, nodesGroupName);
+      nodesObj.mesh.material.fragmentShader = Object(_shaders_marker_fsh_js__WEBPACK_IMPORTED_MODULE_7__["getMarkerFragmentShader"])(marker, nodesGroupName);
+      nodesObj.mesh.material.needsUpdate = true;
+    }
+  }, {
+    key: "changeMarker",
+    value: function changeMarker(marker) {
+      var _iterator3 = _createForOfIteratorHelper(this.getGroup()),
           _step3;
 
       try {
@@ -878,21 +911,18 @@ var Nodes = /*#__PURE__*/function () {
               nodesGroupName = _step3$value[0],
               nodesObj = _step3$value[1];
 
-          var _color = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](colorHEX);
-
-          this.updateColor(_color, nodesGroupName);
+          this.updateMarker(marker, nodesGroupName);
         }
       } catch (err) {
         _iterator3.e(err);
       } finally {
         _iterator3.f();
       }
-    } //size gui interaction
-
+    }
   }, {
-    key: "sizeByField",
-    value: function sizeByField(prop) {
-      var _iterator4 = _createForOfIteratorHelper(this.getComunity()),
+    key: "stopUpdate",
+    value: function stopUpdate() {
+      var _iterator4 = _createForOfIteratorHelper(this.getGroup()),
           _step4;
 
       try {
@@ -900,6 +930,50 @@ var Nodes = /*#__PURE__*/function () {
           var _step4$value = _slicedToArray(_step4.value, 2),
               nodesGroupName = _step4$value[0],
               nodesObj = _step4$value[1];
+
+          nodesObj.mesh.geometry.needsUpdate = false;
+          nodesObj.mesh.material.needsUpdate = false;
+        }
+      } catch (err) {
+        _iterator4.e(err);
+      } finally {
+        _iterator4.f();
+      }
+    }
+  }, {
+    key: "changeColor",
+    value: function changeColor(colorHEX) {
+      var _iterator5 = _createForOfIteratorHelper(this.getGroup()),
+          _step5;
+
+      try {
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
+          var _step5$value = _slicedToArray(_step5.value, 2),
+              nodesGroupName = _step5$value[0],
+              nodesObj = _step5$value[1];
+
+          var _color = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](colorHEX);
+
+          this.updateColor(_color, nodesGroupName);
+        }
+      } catch (err) {
+        _iterator5.e(err);
+      } finally {
+        _iterator5.f();
+      }
+    } //size gui interaction
+
+  }, {
+    key: "sizeByField",
+    value: function sizeByField(prop) {
+      var _iterator6 = _createForOfIteratorHelper(this.getGroup()),
+          _step6;
+
+      try {
+        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
+          var _step6$value = _slicedToArray(_step6.value, 2),
+              nodesGroupName = _step6$value[0],
+              nodesObj = _step6$value[1];
 
           var bufferNodeSize = nodesObj.nodesData[prop].flat();
 
@@ -911,9 +985,9 @@ var Nodes = /*#__PURE__*/function () {
           }
         }
       } catch (err) {
-        _iterator4.e(err);
+        _iterator6.e(err);
       } finally {
-        _iterator4.f();
+        _iterator6.f();
       }
     }
   }, {
@@ -973,51 +1047,7 @@ var Nodes = /*#__PURE__*/function () {
   }, {
     key: "changeEdgeColor",
     value: function changeEdgeColor(color) {
-      var _iterator5 = _createForOfIteratorHelper(this.getComunity()),
-          _step5;
-
-      try {
-        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
-          var _step5$value = _slicedToArray(_step5.value, 2),
-              nodesGroupName = _step5$value[0],
-              nodesObj = _step5$value[1];
-
-          //for (let nodesObj of this.nodesGroup){
-          nodesObj.uniforms.edgeColor.value = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](color);
-          nodesObj.mesh.geometry.needsUpdate = true;
-        }
-      } catch (err) {
-        _iterator5.e(err);
-      } finally {
-        _iterator5.f();
-      }
-    }
-  }, {
-    key: "changeEdgeWidth",
-    value: function changeEdgeWidth(value) {
-      var _iterator6 = _createForOfIteratorHelper(this.getComunity()),
-          _step6;
-
-      try {
-        for (_iterator6.s(); !(_step6 = _iterator6.n()).done;) {
-          var _step6$value = _slicedToArray(_step6.value, 2),
-              nodesGroupName = _step6$value[0],
-              nodesObj = _step6$value[1];
-
-          //for (let nodesObj of this.nodesGroup){
-          nodesObj.uniforms.edgeWidth.value = value;
-          nodesObj.mesh.geometry.needsUpdate = true;
-        }
-      } catch (err) {
-        _iterator6.e(err);
-      } finally {
-        _iterator6.f();
-      }
-    }
-  }, {
-    key: "changeOpacity",
-    value: function changeOpacity(value) {
-      var _iterator7 = _createForOfIteratorHelper(this.getComunity()),
+      var _iterator7 = _createForOfIteratorHelper(this.getGroup()),
           _step7;
 
       try {
@@ -1027,7 +1057,7 @@ var Nodes = /*#__PURE__*/function () {
               nodesObj = _step7$value[1];
 
           //for (let nodesObj of this.nodesGroup){
-          nodesObj.uniforms.bufferOpacity.value = value;
+          nodesObj.uniforms.edgeColor.value = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](color);
           nodesObj.mesh.geometry.needsUpdate = true;
         }
       } catch (err) {
@@ -1037,9 +1067,9 @@ var Nodes = /*#__PURE__*/function () {
       }
     }
   }, {
-    key: "changeScale",
-    value: function changeScale(value) {
-      var _iterator8 = _createForOfIteratorHelper(this.getComunity()),
+    key: "changeEdgeWidth",
+    value: function changeEdgeWidth(value) {
+      var _iterator8 = _createForOfIteratorHelper(this.getGroup()),
           _step8;
 
       try {
@@ -1049,14 +1079,58 @@ var Nodes = /*#__PURE__*/function () {
               nodesObj = _step8$value[1];
 
           //for (let nodesObj of this.nodesGroup){
-          nodesObj.uniforms.bufferNodeScale.value = value;
+          nodesObj.uniforms.edgeWidth.value = value;
           nodesObj.mesh.geometry.needsUpdate = true;
-          nodesObj.mesh.material.needsUpdate = true;
         }
       } catch (err) {
         _iterator8.e(err);
       } finally {
         _iterator8.f();
+      }
+    }
+  }, {
+    key: "changeOpacity",
+    value: function changeOpacity(value) {
+      var _iterator9 = _createForOfIteratorHelper(this.getGroup()),
+          _step9;
+
+      try {
+        for (_iterator9.s(); !(_step9 = _iterator9.n()).done;) {
+          var _step9$value = _slicedToArray(_step9.value, 2),
+              nodesGroupName = _step9$value[0],
+              nodesObj = _step9$value[1];
+
+          //for (let nodesObj of this.nodesGroup){
+          nodesObj.uniforms.bufferOpacity.value = value;
+          nodesObj.mesh.geometry.needsUpdate = true;
+        }
+      } catch (err) {
+        _iterator9.e(err);
+      } finally {
+        _iterator9.f();
+      }
+    }
+  }, {
+    key: "changeScale",
+    value: function changeScale(value) {
+      var _iterator10 = _createForOfIteratorHelper(this.getGroup()),
+          _step10;
+
+      try {
+        for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
+          var _step10$value = _slicedToArray(_step10.value, 2),
+              nodesGroupName = _step10$value[0],
+              nodesObj = _step10$value[1];
+
+          //for (let nodesObj of this.nodesGroup){
+          nodesObj.uniforms.bufferNodeScale.value = value;
+          nodesObj.mesh.geometry.needsUpdate = true;
+          nodesObj.mesh.material.needsUpdate = true;
+        }
+      } catch (err) {
+        _iterator10.e(err);
+      } finally {
+        _iterator10.f();
       }
     }
   }, {
@@ -1090,7 +1164,7 @@ var Nodes = /*#__PURE__*/function () {
       if (clear) {
         nodesGroupName = 'main';
       } else {
-        nodesGroupName = nodesData.props.includes('name') ? nodesData.name : randomString();
+        nodesGroupName = nodesData.props.includes('name') ? nodesData.name : Object(_helpers_tools__WEBPACK_IMPORTED_MODULE_8__["randomString"])();
       }
 
       console.info("Creating nodes", nodesGroupName);
@@ -1098,7 +1172,7 @@ var Nodes = /*#__PURE__*/function () {
       what = what || 'points';
       var nodesObj = {};
       var numNodes = Object.keys(nodesData.id).length;
-      var fixedNodeSize = nodesData.props.includes("size2") == false;
+      var fixedNodeSize = nodesData.props.includes("size") == false;
       var fixedColor = nodesData.props.includes("color") == false; //if (clear) this.deleteAllNodes();
 
       var bufferNodePositions = nodesData.pos;
@@ -1169,17 +1243,16 @@ var Nodes = /*#__PURE__*/function () {
       //} );
       //}else{
       //let symbol = "^";
+      //let symbol= nodesData.props.includes("marker") == false ? randomChoice(availableSymbols): nodesData.marker;
 
-      var randomChoice = function randomChoice(arr) {
-        return arr[Math.floor(arr.length * Math.random())];
-      }; //let symbol= nodesData.props.includes("marker") == false ? randomChoice(availableSymbols): nodesData.marker;
+      var marker = nodesData.props.includes("marker") == false ? Object(_helpers_tools__WEBPACK_IMPORTED_MODULE_8__["randomChoice"])(Object.values(_shaders_marker_fsh_js__WEBPACK_IMPORTED_MODULE_7__["availableMarkers"])) : nodesData.marker; //marker = '3do'
 
+      var markerGeometry = new three__WEBPACK_IMPORTED_MODULE_0__["PlaneBufferGeometry"](1, 1, 1); //let markerGeometry = new THREE.BoxBufferGeometry(1, 1, 1);
 
-      var marker = nodesData.props.includes("marker") == false ? randomChoice(_shaders_marker_fsh_js__WEBPACK_IMPORTED_MODULE_7__["availableMarkers"]) : nodesData.marker;
-      marker = '3do';
-      var markerGeometry = new three__WEBPACK_IMPORTED_MODULE_0__["PlaneBufferGeometry"](1, 1, 1);
-      instancedGeometry.index = markerGeometry.index;
-      instancedGeometry.attributes = markerGeometry.attributes;
+      instancedGeometry = instancedGeometry.copy(markerGeometry);
+      instancedGeometry.maxInstancedCount = numNodes; //instancedGeometry.index = markerGeometry.index;
+      //instancedGeometry.attributes = markerGeometry.attributes;
+
       uniforms.edgeColor = {
         type: 'vec3',
         value: new three__WEBPACK_IMPORTED_MODULE_0__["Color"](_data_config__WEBPACK_IMPORTED_MODULE_3__["default"].nodes.edgeColor)
@@ -1294,9 +1367,20 @@ function getShading(marker) {
 function getMarkerFragmentShader(marker) {
   var nodesGroupName = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'main';
   console.info(marker);
-  return "\n    precision highp float;\n\n    #define SHADER_NAME MarkerNode_".concat(nodesGroupName, "\n\n    varying vec3 vColor;\n    varying float vOpacity;\n    varying float vEdgeWidth;\n    varying vec3 vPos;\n    varying vec3 vEdgeColor;\n\n    float ndot(vec2 a, vec2 b ) {\n        return a.x*b.x - a.y*b.y;\n    }\n    void main() {\n\n        vec3 color = vColor;\n        vec3 edgeColor = vEdgeColor;\n        float edgeWidth = vEdgeWidth;\n        vec2 p = vPos.xy;\n        float opacity = vOpacity;\n\n        float s = 0.5;\n        float sdf = 0.0;\n        ").concat(getDistFunction(marker), "\n        if (sdf<0.0) discard;\n\n        float edge0 = 0.0;\n        float edge1 = minSdf;\n        float opacity2 = opacity;\n        //if (opacity<1.0) opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), 0.01, opacity) + 0.1;\n        ").concat(getShading(marker), "\n\n        vec4 rgba = vec4(  color, opacity2 );\n\n\n        if (edgeWidth > 0.0){\n            if (sdf < edgeWidth)  rgba  = vec4(edgeColor, 1.0);\n        }\n\n        gl_FragColor = rgba;\n\n    }\n    ");
+  return "\n    precision highp float;\n\n    #define SHADER_NAME MarkerNode_".concat(nodesGroupName, "\n\n    varying vec3 vColor;\n    varying float vOpacity;\n    varying float vEdgeWidth;\n    varying vec3 vPos;\n    varying vec3 vEdgeColor;\n\n    float ndot(vec2 a, vec2 b ) {\n        return a.x*b.x - a.y*b.y;\n    }\n    void main() {\n\n        vec3 color = vColor;\n        vec3 edgeColor = vEdgeColor;\n        float edgeWidth = vEdgeWidth;\n        vec2 p = vPos.xy;\n        float opacity = vOpacity;\n\n        float s = 0.5;\n        float sdf = 0.0;\n        ").concat(getDistFunction(marker), "\n        if (sdf<0.0) discard;\n\n        //float edge0 = 0.0;\n        //float edge1 = minSdf;\n        float opacity2 = opacity;\n        //if (opacity<1.0) opacity2 =  clamp((sdf - edge0) / (edge1 - edge0), 0.01, opacity) + 0.1;\n        ").concat(getShading(marker), "\n\n        vec4 rgba = vec4(  color, opacity2 );\n\n\n        if (edgeWidth > 0.0){\n            if (sdf < edgeWidth)  rgba  = vec4(edgeColor, 1.0);\n        }\n\n        gl_FragColor = rgba;\n\n    }\n    ");
 }
-var availableMarkers = ['o', '3do', 's', 'd', '^', 'p', 'h', 's6', '+', 'x'];
+var availableMarkers = {
+  'Circle': 'o',
+  'Sphere': '3do',
+  'Square': 's',
+  'Rhombus': 'd',
+  'Triangle': '^',
+  'Petagon': 'p',
+  'Hexagon': 'h',
+  'Star': 's6',
+  'Cross': '+',
+  'X': 'x'
+};
 
 /***/ }),
 
@@ -1329,7 +1413,7 @@ function getMarkerVertexShader() {
     markerVertexShader += 'attribute vec3 bufferColors;';
   }
 
-  markerVertexShader += "\n\n    uniform float bufferOpacity;\n    uniform float bufferNodeScale;\n    uniform float edgeWidth;\n    uniform vec3 edgeColor;\n\n    varying vec3 vColor;\n    varying vec3 vEdgeColor;\n    varying vec3 vPos;\n    varying float vOpacity;\n    varying float vEdgeWidth;\n\n    void main() {\n\n        vec4 viewNodePos = modelViewMatrix * vec4( bufferNodePositions, 1.0 );\n\n        vec4 mvPosition = viewNodePos +  vec4(position*bufferNodeScale*bufferNodeSize, 0);\n\n        gl_Position = projectionMatrix * mvPosition;\n\n\n        vColor = bufferColors;\n        vOpacity = bufferOpacity;\n        vPos = position;\n        vEdgeWidth = edgeWidth;\n        vEdgeColor = edgeColor;\n    }\n\n    ";
+  markerVertexShader += "\n\n    uniform float bufferOpacity;\n    uniform float bufferNodeScale;\n    uniform float edgeWidth;\n    uniform vec3 edgeColor;\n\n    varying vec3 vColor;\n    varying vec3 vEdgeColor;\n    varying vec3 vPos;\n    varying float vOpacity;\n    varying float vEdgeWidth;\n\n    void main() {\n        vec4 viewNodePos = modelViewMatrix * vec4( bufferNodePositions, 1.0 );\n\n        vec4 mvPosition = viewNodePos +  vec4(position*bufferNodeScale*bufferNodeSize, 0);\n        // if particle size\n        //vec4 mvPosition = viewNodePos +  vec4(position, 0);\n        //gl_PointSize  = bufferNodeScale*bufferNodeSize;\n        //gl_PointSize  = 5.0;\n\n        gl_Position = projectionMatrix * mvPosition;\n\n\n        vColor = bufferColors;\n        vOpacity = bufferOpacity;\n        vPos = position;\n        vEdgeWidth = edgeWidth;\n        vEdgeColor = edgeColor;\n    }\n\n    ";
   return markerVertexShader;
 }
 
@@ -1396,17 +1480,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var three_examples_jsm_postprocessing_EffectComposer_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three/examples/jsm/postprocessing/EffectComposer.js */ "./node_modules/three/examples/jsm/postprocessing/EffectComposer.js");
 /* harmony import */ var three_examples_jsm_postprocessing_RenderPass_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three/examples/jsm/postprocessing/RenderPass.js */ "./node_modules/three/examples/jsm/postprocessing/RenderPass.js");
 /* harmony import */ var three_examples_jsm_postprocessing_ShaderPass_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! three/examples/jsm/postprocessing/ShaderPass.js */ "./node_modules/three/examples/jsm/postprocessing/ShaderPass.js");
-/* harmony import */ var three_examples_jsm_shaders_CopyShader_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three/examples/jsm/shaders/CopyShader.js */ "./node_modules/three/examples/jsm/shaders/CopyShader.js");
-/* harmony import */ var three_examples_jsm_shaders_FXAAShader_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/examples/jsm/shaders/FXAAShader.js */ "./node_modules/three/examples/jsm/shaders/FXAAShader.js");
-/* harmony import */ var alertifyjs__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! alertifyjs */ "./node_modules/alertifyjs/build/alertify.js");
-/* harmony import */ var alertifyjs__WEBPACK_IMPORTED_MODULE_6___default = /*#__PURE__*/__webpack_require__.n(alertifyjs__WEBPACK_IMPORTED_MODULE_6__);
-/* harmony import */ var _data_config__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ../../../data/config */ "./src/js/data/config.js");
-/* harmony import */ var _helpers_stats__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./../../helpers/stats */ "./src/js/graph/helpers/stats.js");
+/* harmony import */ var three_examples_jsm_postprocessing_BloomPass_js__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! three/examples/jsm/postprocessing/BloomPass.js */ "./node_modules/three/examples/jsm/postprocessing/BloomPass.js");
+/* harmony import */ var three_examples_jsm_postprocessing_UnrealBloomPass_js__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! three/examples/jsm/postprocessing/UnrealBloomPass.js */ "./node_modules/three/examples/jsm/postprocessing/UnrealBloomPass.js");
+/* harmony import */ var three_examples_jsm_shaders_FXAAShader_js__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! three/examples/jsm/shaders/FXAAShader.js */ "./node_modules/three/examples/jsm/shaders/FXAAShader.js");
+/* harmony import */ var alertifyjs__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! alertifyjs */ "./node_modules/alertifyjs/build/alertify.js");
+/* harmony import */ var alertifyjs__WEBPACK_IMPORTED_MODULE_7___default = /*#__PURE__*/__webpack_require__.n(alertifyjs__WEBPACK_IMPORTED_MODULE_7__);
+/* harmony import */ var _data_config__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ../../../data/config */ "./src/js/data/config.js");
+/* harmony import */ var _helpers_stats__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./../../helpers/stats */ "./src/js/graph/helpers/stats.js");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 
 
 
@@ -1453,7 +1539,7 @@ function defaultFileName(ext) {
 }
 
 var Renderer = /*#__PURE__*/function () {
-  function Renderer(scene, controls, container, canvas, camera, appState) {
+  function Renderer(useHighQuality, useBloom, scene, controls, container, canvas, camera, appState) {
     var _this = this;
 
     _classCallCheck(this, Renderer);
@@ -1464,40 +1550,52 @@ var Renderer = /*#__PURE__*/function () {
     this.container = container;
     this.camera = camera;
     this.appState = appState; //renderer.toneMapping = THREE.ReinhardToneMapping;
-    // Create WebGL render
+
+    this.useHighQuality = useHighQuality;
+    this.useBloom = useBloom; // Create WebGL render
 
     this.renderer = new three__WEBPACK_IMPORTED_MODULE_0__["WebGLRenderer"]({
       canvas: canvas,
-      antialias: _data_config__WEBPACK_IMPORTED_MODULE_7__["default"].render.antialias,
+      antialias: useHighQuality,
       preserveDrawingBuffer: true,
       alpha: true
     });
     this.renderer.autoClear = false;
 
-    if (_data_config__WEBPACK_IMPORTED_MODULE_7__["default"].useStats) {
-      this.stats = new _helpers_stats__WEBPACK_IMPORTED_MODULE_8__["default"](this.renderer);
+    if (_data_config__WEBPACK_IMPORTED_MODULE_8__["default"].useStats) {
+      this.stats = new _helpers_stats__WEBPACK_IMPORTED_MODULE_9__["default"](this.renderer);
       this.stats.setUp();
     }
 
+    this.renderer.toneMapping = three__WEBPACK_IMPORTED_MODULE_0__["ReinhardToneMapping"];
     this.renderer.setPixelRatio(window.devicePixelRatio); // For retina
     //this.renderer.shadowMap.enabled = false;
     //this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     // Get anisotropy for textures
 
-    _data_config__WEBPACK_IMPORTED_MODULE_7__["default"].maxAnisotropy = this.renderer.getMaxAnisotropy(); // Initial size update set to canvas canvas
+    _data_config__WEBPACK_IMPORTED_MODULE_8__["default"].maxAnisotropy = this.renderer.getMaxAnisotropy(); // Initial size update set to canvas canvas
     //
 
-    var fxaaPass = new three_examples_jsm_postprocessing_ShaderPass_js__WEBPACK_IMPORTED_MODULE_3__["ShaderPass"](three_examples_jsm_shaders_FXAAShader_js__WEBPACK_IMPORTED_MODULE_5__["FXAAShader"]);
-    var pixelRatio = this.renderer.getPixelRatio();
-    var renderPass = new three_examples_jsm_postprocessing_RenderPass_js__WEBPACK_IMPORTED_MODULE_2__["RenderPass"](scene, camera);
-    fxaaPass.material.uniforms['resolution'].value.x = 1 / (this.canvas.offsetWidth * pixelRatio);
-    fxaaPass.material.uniforms['resolution'].value.y = 1 / (this.canvas.offsetHeight * pixelRatio); //fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / 1000000;
-    //fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / 1000000;
+    if (useHighQuality || useBloom) {
+      this.initComposer();
+    }
 
-    this.fxaaPass = fxaaPass;
-    this.composer = new three_examples_jsm_postprocessing_EffectComposer_js__WEBPACK_IMPORTED_MODULE_1__["EffectComposer"](this.renderer);
-    this.composer.addPass(renderPass);
-    this.composer.addPass(fxaaPass); //
+    if (useBloom) {
+      this.initBloomComposer();
+    } //if (useHighQuality){
+    //this.initFXAAAComposer()
+    //}
+    //if (useBloom){
+    //if(highQuality){
+    //let fxaaPass = new ShaderPass( FXAAShader );
+    //const pixelRatio = this.renderer.getPixelRatio();
+    //fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( this.canvas.offsetWidth * pixelRatio );
+    //fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( this.canvas.offsetHeight * pixelRatio );
+    //this.fxaaPass = fxaaPass
+    //this.composer.addPass( fxaaPass );
+    //}
+    //
+
 
     this.updateSize(this.canvas.offsetWidth, this.canvas.offsetHeight); // Listeners
 
@@ -1517,10 +1615,29 @@ var Renderer = /*#__PURE__*/function () {
     if (btnSave) btnSave.addEventListener("click", function (event) {
       return _this.takeScreenshot();
     });
-    var renderPass = new three_examples_jsm_postprocessing_RenderPass_js__WEBPACK_IMPORTED_MODULE_2__["RenderPass"](scene, camera);
   }
 
   _createClass(Renderer, [{
+    key: "initComposer",
+    value: function initComposer() {
+      this.composer = new three_examples_jsm_postprocessing_EffectComposer_js__WEBPACK_IMPORTED_MODULE_1__["EffectComposer"](this.renderer);
+      var renderPass = new three_examples_jsm_postprocessing_RenderPass_js__WEBPACK_IMPORTED_MODULE_2__["RenderPass"](this.scene, this.camera);
+      this.composer.addPass(renderPass);
+    }
+  }, {
+    key: "initBloomComposer",
+    value: function initBloomComposer() {
+      var bloomPass = new three_examples_jsm_postprocessing_BloomPass_js__WEBPACK_IMPORTED_MODULE_4__["BloomPass"](1, // strength
+      25, // kernel size
+      4, // sigma ?
+      256);
+      var strength = 1;
+      var radius = 2;
+      var threshold = 0;
+      this.bloomPass = new three_examples_jsm_postprocessing_UnrealBloomPass_js__WEBPACK_IMPORTED_MODULE_5__["UnrealBloomPass"](new three__WEBPACK_IMPORTED_MODULE_0__["Vector2"](window.innerWidth, window.innerHeight), strength, radius, threshold);
+      this.composer.addPass(this.bloomPass);
+    }
+  }, {
     key: "setCameraAspect",
     value: function setCameraAspect(widthRender, heightRender) {
       var keepPos = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
@@ -1549,11 +1666,17 @@ var Renderer = /*#__PURE__*/function () {
       widthRender = widthRender || this.container.clientWidth;
       heightRender = heightRender || this.container.clientHeight;
       this.setCameraAspect(widthRender, heightRender, keepPos);
-      this.renderer.setSize(widthRender, heightRender);
-      this.composer.setSize(widthRender, heightRender);
-      var pixelRatio = this.renderer.getPixelRatio();
-      this.fxaaPass.material.uniforms['resolution'].value.x = 1 / (widthRender * pixelRatio);
-      this.fxaaPass.material.uniforms['resolution'].value.y = 1 / (heightRender * pixelRatio); //this.appState.originalAspect  = aspect
+
+      if (this.useHighQuality || this.useBloom) {
+        this.renderer.setSize(widthRender, heightRender);
+        this.composer.setSize(widthRender, heightRender);
+      } else {
+        this.renderer.setSize(widthRender, heightRender);
+      }
+
+      var pixelRatio = this.renderer.getPixelRatio(); //this.fxaaPass.material.uniforms[ 'resolution' ].value.x = 1 / ( widthRender * pixelRatio );
+      //this.fxaaPass.material.uniforms[ 'resolution' ].value.y = 1 / ( heightRender * pixelRatio );
+      //this.appState.originalAspect  = aspect
 
       this.render(); //const pixelRatio = window.devicePixelRatio;
       //const width  = widthRender  * pixelRatio | 0;
@@ -1580,11 +1703,17 @@ var Renderer = /*#__PURE__*/function () {
     value: function render() {
       // Renders scene to canvas target
       // this.pickHelper.pick( scene, camera, 0)
-      if (_data_config__WEBPACK_IMPORTED_MODULE_7__["default"].useStats) _helpers_stats__WEBPACK_IMPORTED_MODULE_8__["default"].start(); //this.controls.update();
-      //this.renderer.render(this.scene, this.camera);
+      if (_data_config__WEBPACK_IMPORTED_MODULE_8__["default"].useStats) _helpers_stats__WEBPACK_IMPORTED_MODULE_9__["default"].start(); //this.controls.update();
+      //
 
-      this.composer.render();
-      if (_data_config__WEBPACK_IMPORTED_MODULE_7__["default"].useStats) _helpers_stats__WEBPACK_IMPORTED_MODULE_8__["default"].end();
+      if (this.useHighQuality || this.useBloom) {
+        //this.renderer.render(this.scene, this.camera);
+        this.composer.render();
+      } else {
+        this.renderer.render(this.scene, this.camera);
+      }
+
+      if (_data_config__WEBPACK_IMPORTED_MODULE_8__["default"].useStats) _helpers_stats__WEBPACK_IMPORTED_MODULE_9__["default"].end();
     }
   }, {
     key: "delete",
@@ -1628,8 +1757,10 @@ var Renderer = /*#__PURE__*/function () {
         this.scene.background = null;
       }
 
-      this.renderer.setSize(widthImage, heightImage);
-      this.renderer.render(this.scene, this.camera, null, false);
+      this.renderer.setSize(widthImage, heightImage); //this.renderer.render( this.scene, this.camera, null, false );
+
+      this.composer.setSize(widthImage, heightImage);
+      this.composer.render();
       var dataURI = this.canvas.toDataURL('image/png', 1.0);
       if (saveWithTransparency) this.scene.background = color;
       this.appState.takingScreenshot = false;
@@ -1767,6 +1898,37 @@ var Stats = /*#__PURE__*/function () {
 
 /***/ }),
 
+/***/ "./src/js/graph/helpers/tools.js":
+/*!***************************************!*\
+  !*** ./src/js/graph/helpers/tools.js ***!
+  \***************************************/
+/*! exports provided: randomString, randomChoice */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "randomString", function() { return randomString; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "randomChoice", function() { return randomChoice; });
+/**
+ * Return a random string
+ * @return {string} A random string with 13 elements
+ */
+var randomString = function randomString() {
+  return Math.random().toString(36).substring(2, 15);
+};
+;
+/**
+ * Random select a element of a given array
+ * @param  {array} arr -
+ * @return {Object} A random choiced element of the given array
+ */
+
+var randomChoice = function randomChoice(arr) {
+  return arr[Math.floor(arr.length * Math.random())];
+};
+
+/***/ }),
+
 /***/ "./src/js/graph/interactions/datGUI.js":
 /*!*********************************************!*\
   !*** ./src/js/graph/interactions/datGUI.js ***!
@@ -1779,6 +1941,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return DatGUI; });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var dat_gui__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! dat.gui */ "./node_modules/dat.gui/build/dat.gui.module.js");
+/* harmony import */ var _components_nodes_shaders_marker_fsh_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./../components/nodes/shaders/marker.fsh.js */ "./src/js/graph/components/nodes/shaders/marker.fsh.js");
 function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _unsupportedIterableToArray(arr, i) || _nonIterableRest(); }
 
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
@@ -1798,7 +1961,13 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
- //import Config from '../../data/config';
+
+
+/**
+ * Update the dropdown itens related with a given datGUI element
+ * @param  {DOMGui} datGUI select element
+ * @param  {Array} Array of strings with the dropdown itens
+ */
 
 function updateDropdown(target, list) {
   var innerHTMLStr = "";
@@ -1842,6 +2011,15 @@ var DatGUI = /*#__PURE__*/function () {
     this.comunityField = nodesFolder.add(appState, "comunityField", appState.comunityField).name("Comunity").onChange(function (value) {
       nodes0.setComunity(value);
     });
+    var markers = {
+      marker: {
+        "--": ""
+      }
+    };
+    nodesFolder.add(markers, "marker", _components_nodes_shaders_marker_fsh_js__WEBPACK_IMPORTED_MODULE_2__["availableMarkers"]).name("marker").onChange(function (value) {
+      nodes0.changeMarker(value);
+      render();
+    });
     nodesFolder.add(Config.nodes, 'show').onChange(function (value) {
       for (var _i = 0, _Object$entries = Object.entries(nodes0.nodes); _i < _Object$entries.length; _i++) {
         var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
@@ -1860,9 +2038,11 @@ var DatGUI = /*#__PURE__*/function () {
     });
     this.sizeField = nodesFolder.add(appState, "defaultProps", appState.defaultProps).name("Size Field").onChange(function (value) {
       nodes0.sizeByField(value);
+      render();
     });
     nodesFolder.add(Config.nodes, 'scale', 1, 10, 0.1).name('Scale').onChange(function (value) {
-      nodes0.changeScale(value); //node.material.opacity=value;
+      nodes0.changeScale(value);
+      render(); //node.material.opacity=value;
     });
     nodesFolder.addColor(Config.nodes, "edgeColor").name('Edge Color').onChange(function (color) {
       nodes0.changeEdgeColor(color);
@@ -1873,7 +2053,8 @@ var DatGUI = /*#__PURE__*/function () {
       render(); //node.material.opacity=value;
     });
     nodesFolder.add(Config.nodes, 'opacity', 0, 1).name('Opacity').onChange(function (value) {
-      nodes0.changeOpacity(value); //node.material.opacity=value;
+      nodes0.changeOpacity(value);
+      render(); //node.material.opacity=value;
     });
     this.colorProp = nodesFolder.add(appState, "defaultProps", appState.defaultProps).name("Color by Attr.").onChange(function (value) {
       nodes0.colorByProp(value);
@@ -1942,6 +2123,24 @@ var DatGUI = /*#__PURE__*/function () {
     //} );
 
     edgesFolder.open();
+    var renderFolder = gui.addFolder('Render');
+    renderFolder.add(Config.bloomPass, 'exposure', 0.1, 5).onChange(function (value) {
+      renderer.toneMappingExposure = Math.pow(value, 4.0);
+      render();
+    });
+    renderFolder.add(Config.bloomPass, 'threshold', 0.0, 1.0).onChange(function (value) {
+      renderer.bloomPass.threshold = Number(value);
+      render();
+    });
+    renderFolder.add(Config.bloomPass, 'strength', 0.0, 10.0).onChange(function (value) {
+      renderer.bloomPass.strength = Number(value);
+      render();
+    });
+    renderFolder.add(Config.bloomPass, 'radius', 0.0, 1.0).step(0.01).onChange(function (value) {
+      renderer.bloomPass.radius = Number(value);
+      render();
+    });
+    renderFolder.open();
     /* Controls */
     //const controlsFolder = gui.addFolder('Controls');
     //controlsFolder.add(Config.controls, 'autoRotate').name('Auto Rotate').onChange((value) => {
@@ -2168,14 +2367,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Graph; });
 /* harmony import */ var three__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! three */ "./node_modules/three/build/three.module.js");
 /* harmony import */ var three_examples_jsm_controls_OrbitControls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! three/examples/jsm/controls/OrbitControls */ "./node_modules/three/examples/jsm/controls/OrbitControls.js");
-/* harmony import */ var three_examples_jsm_controls_TrackballControls__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! three/examples/jsm/controls/TrackballControls */ "./node_modules/three/examples/jsm/controls/TrackballControls.js");
-/* harmony import */ var alertifyjs__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! alertifyjs */ "./node_modules/alertifyjs/build/alertify.js");
-/* harmony import */ var alertifyjs__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__webpack_require__.n(alertifyjs__WEBPACK_IMPORTED_MODULE_3__);
-/* harmony import */ var _components_renderer_main__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./components/renderer/main */ "./src/js/graph/components/renderer/main.js");
-/* harmony import */ var _components_nodes_main__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./components/nodes/main */ "./src/js/graph/components/nodes/main.js");
-/* harmony import */ var _components_edges_main__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./components/edges/main */ "./src/js/graph/components/edges/main.js");
-/* harmony import */ var _interactions_keyboard__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./interactions/keyboard */ "./src/js/graph/interactions/keyboard.js");
-/* harmony import */ var _interactions_datGUI__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./interactions/datGUI */ "./src/js/graph/interactions/datGUI.js");
+/* harmony import */ var alertifyjs__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! alertifyjs */ "./node_modules/alertifyjs/build/alertify.js");
+/* harmony import */ var alertifyjs__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(alertifyjs__WEBPACK_IMPORTED_MODULE_2__);
+/* harmony import */ var _components_renderer_main__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/renderer/main */ "./src/js/graph/components/renderer/main.js");
+/* harmony import */ var _components_nodes_main__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./components/nodes/main */ "./src/js/graph/components/nodes/main.js");
+/* harmony import */ var _components_edges_main__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./components/edges/main */ "./src/js/graph/components/edges/main.js");
+/* harmony import */ var _interactions_keyboard__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./interactions/keyboard */ "./src/js/graph/interactions/keyboard.js");
+/* harmony import */ var _interactions_datGUI__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./interactions/datGUI */ "./src/js/graph/interactions/datGUI.js");
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -2185,28 +2383,39 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 // Global imports -
- //import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 
 
- // Components
-
- //import PickCamera from "./components/pick";
-
-
- // User Interaction
 
 
 
+
+
+/**
+ * Random select a element of a given array
+ * @param  {string}
+ * @return {Object} A random choiced element of the given array
+ */
 
 var Graph = /*#__PURE__*/function () {
+  /**
+   * @param  {string} Id of Canvas DOMElement
+   * @param  {string} Id of Canvas DOMElement
+   * @param  {bool}
+   * @param  {bool} If the graph should be ploted in 2d
+   * @return {Object} A random choiced element of the given array
+   */
   function Graph(idCanvasHTML, Config, keyboardPressFunction) {
     var use2d = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+    var useHighQuality = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : true;
+    var useBloom = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : true;
 
     _classCallCheck(this, Graph);
 
     this.Config = Config;
     this.use2d = use2d;
+    this.useHighQuality = useHighQuality;
+    this.useBloom = useBloom;
     this.idCanvasHTML = idCanvasHTML;
     this.canvas = document.getElementById("".concat(idCanvasHTML));
     this.container = document.getElementById("container".concat(idCanvasHTML));
@@ -2242,8 +2451,8 @@ var Graph = /*#__PURE__*/function () {
       this.state.originalAspect = window.innerWidth / window.innerHeight;
       this.scene.add(this.camera);
       this.scene.background = new three__WEBPACK_IMPORTED_MODULE_0__["Color"](this.Config.scene.color);
-      this.nodes = new _components_nodes_main__WEBPACK_IMPORTED_MODULE_5__["default"](this.scene, this.use2d);
-      this.edges = new _components_edges_main__WEBPACK_IMPORTED_MODULE_6__["default"](this.scene, 0, 1);
+      this.nodes = new _components_nodes_main__WEBPACK_IMPORTED_MODULE_4__["default"](this.scene, this.use2d);
+      this.edges = new _components_edges_main__WEBPACK_IMPORTED_MODULE_5__["default"](this.scene, 0, 1);
       this.controls = new three_examples_jsm_controls_OrbitControls__WEBPACK_IMPORTED_MODULE_1__["OrbitControls"](this.camera, this.canvas);
       this.controls.target.set(0, 0, 0);
       this.controls.enableKeys = true;
@@ -2255,10 +2464,10 @@ var Graph = /*#__PURE__*/function () {
         //this.controls.maxAzimuthAngle = 0; // radians
       }
 
-      this.renderer = new _components_renderer_main__WEBPACK_IMPORTED_MODULE_4__["default"](this.scene, this.controls, this.container, this.canvas, this.camera, this.state);
-      if (this.Config.useGuiControl) this.datGui = new _interactions_datGUI__WEBPACK_IMPORTED_MODULE_8__["default"](this.idCanvasHTML, this.scene, this.renderer, this.camera, this.nodes, this.edges, this.Config, //bloomPassEdges,edgesBloomScene,
+      this.renderer = new _components_renderer_main__WEBPACK_IMPORTED_MODULE_3__["default"](this.highQuality, this.useBloom, this.scene, this.controls, this.container, this.canvas, this.camera, this.state);
+      if (this.Config.useGuiControl) this.datGui = new _interactions_datGUI__WEBPACK_IMPORTED_MODULE_7__["default"](this.idCanvasHTML, this.scene, this.renderer, this.camera, this.nodes, this.edges, this.Config, //bloomPassEdges,edgesBloomScene,
       this.state);
-      if (this.Config.useKeyboard) this.keyboardInteraction = new _interactions_keyboard__WEBPACK_IMPORTED_MODULE_7__["default"](this.canvas, this.state, this.Config, this.datGui.gui, this.keyboardPressFunction); //{
+      if (this.Config.useKeyboard) this.keyboardInteraction = new _interactions_keyboard__WEBPACK_IMPORTED_MODULE_6__["default"](this.canvas, this.state, this.Config, this.datGui.gui, this.keyboardPressFunction); //{
       //const color = 0xffffff;
       //const intensity = 4;
       //const light = new THREE.DirectionalLight(color, intensity);
@@ -2267,21 +2476,38 @@ var Graph = /*#__PURE__*/function () {
       //this.camera.add(light);
       //}
     }
+    /**
+     * Random select a element of a given array
+     */
+
   }, {
     key: "ressetLook",
     value: function ressetLook() {
-      var position = this.edges.instancedEdges.geometry.boundingSphere.center;
-      this.camera.position.z = 4 * this.edges.instancedEdges.geometry.boundingSphere.radius;
-      this.camera.lookAt(position);
+      //let position = this.edges.instancedEdges.geometry.boundingSphere.center
+      //this.camera.position.z = 4*this.edges.instancedEdges.geometry.boundingSphere.radius
+      this.camera.position.z = 4; //this.camera.lookAt(position)
+
       this.camera.updateProjectionMatrix();
       this.renderer.render();
     }
+    /**
+     * Random select a element of a given array
+     */
+
   }, {
     key: "deleteGraph",
     value: function deleteGraph() {
       this.nodes.deleteAllNodes();
       this.edges.deleteAllEdges();
     }
+    /**
+     * @param  {string} Id of Canvas DOMElement
+     * @param  {string} Id of Canvas DOMElement
+     * @param  {bool}
+     * @param  {bool} If the graph should be ploted in 2d
+     * @return {Object} A random choiced element of the given array
+     */
+
   }, {
     key: "getURI",
     value: function getURI(width, height, transparency) {
@@ -2289,6 +2515,10 @@ var Graph = /*#__PURE__*/function () {
       var uri = this.renderer.getURI(width, height, transparency);
       this.uri = uri;
     }
+    /**
+     * Random select a element of a given array
+     */
+
   }, {
     key: "stopRender",
     value: function stopRender() {
