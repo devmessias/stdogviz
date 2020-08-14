@@ -8,8 +8,8 @@ const entry = './src/js/app.js';
 const includePath = path.join(__dirname, 'src/js');
 const nodeModulesPath = path.join(__dirname, 'node_modules');
 
-let outputPath = path.join(__dirname, 'src/public/js');
-let outputDir = path.join(__dirname, 'src/public');
+let outputPath = path.join(__dirname, 'public/js');
+let outputDir = path.join(__dirname, 'public');
 
 const files = {
     appWebClientJs:{
@@ -36,7 +36,7 @@ module.exports = env => {
         devtool = 'hidden-source-map';
         mode = 'production';
         stats = 'none';
-        outputPath = `${__dirname}/build/js`;
+        outputPath = outputDir;
     }
 
     console.log('Webpack build -');
@@ -116,8 +116,13 @@ module.exports = env => {
         devtool: 'source-map',
 
         devServer: {
-            contentBase: 'src/public',
+            contentBase: 'public',
             open:false,
+            port: 9001,
+            watchOptions: {
+                aggregateTimeout: 200,
+                poll: 1000
+            }
         },
 
         plugins: plugins.concat(

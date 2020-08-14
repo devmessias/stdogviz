@@ -85,7 +85,7 @@ export default class DatGUI {
 
                 render();
             });
-        nodesFolder.add(Config.nodes, 'scale', 1, 10, 0.1).name('Scale').onChange((value) => {
+        nodesFolder.add(Config.nodes, 'scale', 0.01, 10, 0.01).name('Scale').onChange((value) => {
             nodes0.changeScale(value)
 
             render();

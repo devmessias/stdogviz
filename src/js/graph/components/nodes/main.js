@@ -12,6 +12,7 @@ import {getMarkerFragmentShader, availableMarkers} from "./shaders/marker.fsh.js
 
 import {randomString, randomChoice} from "../../helpers/tools";
 
+
 /**
  * Class representing the Nodes of the Graph
  * */

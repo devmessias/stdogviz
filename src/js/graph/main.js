@@ -13,11 +13,9 @@ import DatGUI from './interactions/datGUI';
 
 
 /**
- * Random select a element of a given array
- * @param  {string}
- * @return {Object} A random choiced element of the given array
- */
-export default class Graph {
+ * Class representing the  Graph
+ * */
+ export default class Graph {
     /**
      * @param  {string} Id of Canvas DOMElement
      * @param  {string} Id of Canvas DOMElement
@@ -54,7 +52,7 @@ export default class Graph {
 
         }else{
             this.camera = new THREE.PerspectiveCamera(
-                camera.fov, camera.aspect, camera.near, camera.far);
+                camera.fov, camera.aspect, 1, camera.far);
         }
 
         this.scene = new THREE.Scene();
@@ -71,7 +69,6 @@ export default class Graph {
             isLoaded: false,
             firstLoad: true,
             takingScreenshot: false,
-            defaultProps: {},
             stopChanges: false,
             renders: [],
             comunityField:{},
@@ -135,12 +132,12 @@ export default class Graph {
             );
 
         //{
-            //const color = 0xffffff;
-            //const intensity = 4;
-            //const light = new THREE.DirectionalLight(color, intensity);
-            //light.position.set(-1, 2, 4);
-            //light.layers.enable(0)
-            //this.camera.add(light);
+        //const color = 0xffffff;
+        //const intensity = 4;
+        //const light = new THREE.DirectionalLight(color, intensity);
+        //light.position.set(-1, 2, 4);
+        //light.layers.enable(0)
+        //this.camera.add(light);
         //}
     }
     /**

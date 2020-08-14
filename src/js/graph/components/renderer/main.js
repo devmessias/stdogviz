@@ -13,6 +13,12 @@ import alertify from 'alertifyjs';
 import Stats from './../../helpers/stats';
 
 
+
+/**
+ * Random select a element of a given array
+ * @param  {array} arr -
+ * @return {Object} A random choiced element of the given array
+ */
 function dataURIToBlob( dataURI ) {
     const binStr = window.atob( dataURI.split( ',' )[1] );
     const len = binStr.length;
@@ -23,6 +29,11 @@ function dataURIToBlob( dataURI ) {
     return new window.Blob( [arr] );
 }
 
+/**
+ * Random select a element of a given array
+ * @param  {array} arr -
+ * @return {Object} A random choiced element of the given array
+ */
 function saveDataURI( name, dataURI ) {
     const blob = dataURIToBlob( dataURI );
 
@@ -39,6 +50,13 @@ function saveDataURI( name, dataURI ) {
     };
     link.click();
 }
+
+
+/**
+ * Random select a element of a given array
+ * @param  {array} arr -
+ * @return {Object} A random choiced element of the given array
+ */
 
 function defaultFileName (ext) {
     const str = `${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}${ext}`;
@@ -97,13 +115,6 @@ export default class Renderer {
             this.initFXAAComposer()
         }
 
-        //if (useBloom){
-
-                //if(highQuality){
-        //
-                    //}
-
-        //
 
 
         this.updateSize(this.canvas.offsetWidth,this.canvas.offsetHeight);
@@ -111,17 +122,16 @@ export default class Renderer {
         document.addEventListener('DOMContentLoaded', () => this.updateSize(), false);
         window.addEventListener('resize', () => this.updateSize(), false);
 
+        //
         this.controls.addEventListener('change', ()=>this.render());
+
         this.render = this.render.bind(this)
         this.updateSize = this.updateSize.bind(this)
 
         this.takeScreenshot = this.takeScreenshot.bind(this)
         const btnSave = document.getElementById("btnSaveImage");
         if(btnSave)
-        btnSave.addEventListener("click",  event=>this.takeScreenshot())
-
-
-
+            btnSave.addEventListener("click",  event=>this.takeScreenshot())
 
     }
     initComposer(){
@@ -148,7 +158,6 @@ export default class Renderer {
             strength, radius, threshold );
         this.composer.addPass(this.bloomPass);
 
-
     }
     initFXAAComposer(){
         console.info('Init FXAA');
@@ -163,7 +172,6 @@ export default class Renderer {
         this.composer.addPass( fxaaPass );
 
     }
-
     setCameraAspect(widthRender, heightRender, keepPos=true) {
 
         const canvas = this.canvas;
@@ -184,7 +192,6 @@ export default class Renderer {
 
         this.camera.updateProjectionMatrix();
     }
-
     updateSize(widthRender, heightRender, keepPos=true) { //if (this.appState.takingScreenshot) return;
         widthRender = widthRender || this.container.clientWidth
         heightRender= heightRender ||this.container.clientHeight
