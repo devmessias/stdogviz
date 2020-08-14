@@ -117,7 +117,8 @@ module.exports = env => {
 
         devServer: {
             contentBase: 'public',
-            open:false,
+            open: true, 
+            openPage: 'localhost:9001?use2d=0&highQuality=1&bloom=0&address=localhost:6688',
             port: 9001,
             watchOptions: {
                 aggregateTimeout: 200,
@@ -127,7 +128,7 @@ module.exports = env => {
 
         plugins: plugins.concat(
             new HtmlWebpackPlugin({
-                title: 'Three.js Webpack ES6 Boilerplate',
+                title: 'stdogViz',
                 template: path.join(__dirname, 'src/html/index.html'),
                 filename: '../index.html',
                 env: env.NODE_ENV,
@@ -225,6 +226,7 @@ module.exports = env => {
 
         devServer: {
             contentBase: 'src/public',
+
             open:false,
             hot:true,
         },

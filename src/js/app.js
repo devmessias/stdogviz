@@ -130,9 +130,9 @@ const urlParams = new URLSearchParams(queryString);
 console.info(queryString);
 const useHighQuality = urlParams.has('highQuality')? urlParams.get('highQuality')=='1': true;
 const useBloom = urlParams.has('bloom')? urlParams.get('bloom')=='1': true;
-const use2d = urlParams.has('use2d')? urlParams.get('2d')=='1': false;
+const use2d = urlParams.has('use2d')? urlParams.get('use2d')=='1': false;
 const address = urlParams.has('address')? urlParams.get('address'): 'localhost:6688';
-
+   
 Config.useGuiControl = true;
 
 const graphObj = new Graph(
