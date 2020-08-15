@@ -67,7 +67,8 @@ function listenerFunction(message) {
             console.time('creatingEdges');
 
             console.group('createEdges');
-            graphObj.edges.createEdges(message.nodes, message.edges, message.defaultProps);
+            graphObj.edges.createEdges(
+                message.nodes, message.edges, message.defaultProps);
             console.groupEnd()
             console.timeEnd('creatingEdges');
 
@@ -142,7 +143,8 @@ const useHighQuality = urlParams.has('highQuality')? urlParams.get('highQuality'
 const useBloom = urlParams.has('bloom')? urlParams.get('bloom')=='1': true;
 const use2d = urlParams.has('use2d')? urlParams.get('2d')=='1': false;
 const address = urlParams.has('address')? urlParams.get('address'): 'localhost:5000';
-   
+const showStats = urlParams.has('stats')? urlParams.get('stats')=='1': false;
+
 Config.useGuiControl = true;
 
 const graphObj = new Graph(
@@ -152,6 +154,7 @@ const graphObj = new Graph(
     use2d,
     useHighQuality,
     useBloom,
+    showStats
 )
 window.graphObjVar = graphObj;
 

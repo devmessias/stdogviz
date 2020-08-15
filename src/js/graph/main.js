@@ -30,7 +30,7 @@ import DatGUI from './interactions/datGUI';
         use2d=false,
         useHighQuality=true,
         useBloom=true,
-        useStats=true,
+        showStats=true,
         camera={
             fov: 40,
             near: 2,
@@ -40,7 +40,7 @@ import DatGUI from './interactions/datGUI';
     ) {
         this.Config = Config
         this.use2d = use2d;
-        this.useStats = useStats;
+        this.showStats = showStats;
         this.useHighQuality = useHighQuality;
         this.useBloom = useBloom;
         this.idCanvasHTML = idCanvasHTML
@@ -107,7 +107,7 @@ import DatGUI from './interactions/datGUI';
         this.renderer = new Renderer(
             this.useHighQuality,
             this.useBloom,
-            this.useStats,
+            this.showStats,
             this.scene, this.controls, this.container, this.canvas, this.camera, this.state,
             dataPool);
         console.groupEnd();

@@ -41,7 +41,7 @@ export default class DataPool {
         this.ws.emit("getGraph");
     }
     send2server(imgURI){
-        this.ws.emit("renderedImg", {"imgURI":imgURI})
+        this.ws.emit("sendRenderedImg", {"imgURI":imgURI})
     }
 
     deleteNodes(nodesId) {
