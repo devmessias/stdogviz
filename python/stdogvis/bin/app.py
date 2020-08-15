@@ -5,17 +5,13 @@ from flask_socketio import join_room, leave_room
 from flask_socketio import send, emit
 import igraph as ig
 
-import pickle
 import time
 import json
 
 import logging
 import sys
 
-import networkx as nx
-
 import numpy as np
-import helios   
 # TODO : CLOSE SERVER
 # TODO: CLOSE ALL WEB PAGES
 # TODO: CLOSE ALL HTTP.SERVER
@@ -52,6 +48,7 @@ def dummyGraph():
     global g, State
     n = 1000
     g = ig.Graph.Erdos_Renyi(n, 3/n)
+    
     # defaultProps = g.vs[0].attribute_names()
     defaultProps = ["pos", "degree"]
 
@@ -87,56 +84,59 @@ def dummyGraph():
     State["defaultProps"] = defaultProps
     State["defaultEdgeProps"] = defaultEdgeProps
 
-def loadGraph():
+def loadGraph(fileName):
     global g, State
-    g = pickle.load(open(State["filename"], "rb"))
-    State["graphLoaded"] = True
+    g = ig.read(fileName)
 
-    State["defaultProps"] = list(g.nodes[[n for n in g.nodes()][0]].keys())
+    n = g.vcount()
+    nodes = {}    
+    defaultProps = g.vs[0].attribute_names()
+    posInProps = "pos" in defaultProps
 
-    edge_data = [g.edges[s, t] for s, t in g.edges()]
-    State["defaultEdgeProps"] = list(edge_data[0].keys())
-    State["numNodes"] = len(g.nodes())
-    #g = nx.read_graphml(args.file)
-    # apagar isso
-    #for n in g.nodes():
-    #    g.nodes[n]["pos"] = list(np.random.normal(size=3))
+    if posInProps:
+        nodes["pos"] = []
+    else:
+        layout = g.layout_kamada_kawai_3d()
+        nodes["pos"] = np.array( layout.coords).flatten().tolist()
 
-        #
-    # nodes = {
-            # n:g.nodes[n]
-            # for n in g.nodes()
-        # }
+        
     nodesId = {
-        n:i for i,n in enumerate(g.nodes())
+        n:n for n in range(n)
     }
 
-    nodes = {}
+        
     nodes["id"] = nodesId
-    nodes["props"] = State["defaultProps"]
-    nodes["pos"] = []
-    degrees = g.degree()
-    for prop in State["defaultProps"]:
-        if prop == "pos":
-            for n in g.nodes():
-                nodes["pos"] += list(g.nodes[n]["pos"])
-        else:
-            nodes[prop] = []
-            for n in g.nodes():
-                nodeInfo = g.nodes[n]
-                value = nodeInfo[prop] if prop in nodeInfo.keys() else 0
-                nodes[prop].append(value)
-                
+    nodes["props"] = defaultProps
+    for prop in defaultProps:
+        for node in g.vs:
+            if prop == "pos":
+                for node in g.vs:
+                    nodes["pos"] += list(n["pos"])
+            else:
+                nodes[prop] = []
+                for node in g.vs:
+                    nodeInfo = node
+                    value = nodeInfo[prop] if prop in node.attribute_names() else 0
+                    nodes[prop].append(value)
+
 
     edges = {}
-    edges["nodes"] = [[nodesId[s], nodesId[t]] for s,t in g.edges()]
-    for prop in State["defaultEdgeProps"]:
-        edges[prop] = [d[prop] for d in edge_data]
+    defaultEdgeProps = g.es[0].attribute_names()
 
-    edges["props"] = list(edge_data[0].keys())
+
+    edges["nodes"] = [[e.source, e.target] for e in g.es]
+    for prop in defaultEdgeProps:
+        edges[prop] = [e[prop] for e in g.es]
+
+    edges["props"] = defaultEdgeProps
+
     State["nodes"] = nodes
     State["edges"] = edges
 
+    State["graphLoaded"] = True
+    State["numNodes"] = n
+    State["defaultProps"] = defaultProps
+    State["defaultEdgeProps"] = defaultEdgeProps
 
 @socketio.on("getGraph")
 def getGraph():
@@ -251,6 +251,6 @@ if __name__ == '__main__':
     elif args.file:
         State["filename"] = args.file
         logging.info("Loading from file " + args.file)
-        loadGraph()
+        loadGraph(args.file)
 
     socketio.run(app, debug=False)
