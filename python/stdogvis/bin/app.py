@@ -220,6 +220,15 @@ def sendRenderedImg(data):
     emit("reciveRenderedImg", data,
         room="pyObj")
 
+@socketio.on('updateNodeColors')
+def updateNodeColors(data):
+    data = {"type": "updateNodeColors", "msg":"",
+        'colors': data['colors'],
+    }
+    emit("webClientListener", data,
+        room="webClient")
+
+
 
 @socketio.on('joinRoom')
 def joinRoom(data):

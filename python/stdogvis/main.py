@@ -115,6 +115,10 @@ class StDoGClient(socketio.Client):
         img = b64toImg(self.imgURI[i])
         self.img = img
         return img
+
+    def updateNodeColors(self, colors):
+        colors = list(colors.flatten())
+        self.emit("updateNodeColors", data={'colors':colors})
     
     def renderMyImg(self, width=200, height=200, transparency=True):
         self.emit("renderMyImg", callback=lambda msg:print(msg), 

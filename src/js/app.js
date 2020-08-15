@@ -56,78 +56,87 @@ function keyboardPressFunction(key, action) {
 function listenerFunction(message) {
     //let message = JSON.parse(event.data);
     switch (message["type"]) {
-        case "yourGraphData":
-            clearInterval(intervalGetGraph);
-            //graphObj.state.defaultProps = message.defaultProps
-            //
-            console.group('getGraph');
-            console.time('creatingEdges');
+      case "yourGraphData":
+        clearInterval(intervalGetGraph);
+        //graphObj.state.defaultProps = message.defaultProps
+        //
+        console.group("getGraph");
+        console.time("creatingEdges");
 
-            console.group('createEdges');
-            graphObj.edges.createEdges(
-                message.nodes, message.edges, message.defaultProps);
-            console.groupEnd()
-            console.timeEnd('creatingEdges');
+        console.group("createEdges");
+        graphObj.edges.createEdges(
+          message.nodes,
+          message.edges,
+          message.defaultProps
+        );
+        console.groupEnd();
+        console.timeEnd("creatingEdges");
 
-            console.group('createNodes');
-            console.time('creatingNodes');
-            graphObj.nodes.createNodes(message.nodes, true);
-            console.timeEnd('creatingNodes');
-            console.groupEnd()
-            if(graphObj.state.firstLoad){
-                graphObj.firstLoad = false;
-               graphObj.ressetLook();
-                clearInterval(intervalGetGraph)
-            }
+        console.group("createNodes");
+        console.time("creatingNodes");
+        graphObj.nodes.createNodes(message.nodes, true);
+        console.timeEnd("creatingNodes");
+        console.groupEnd();
+        if (graphObj.state.firstLoad) {
+          graphObj.firstLoad = false;
+          graphObj.ressetLook();
+          clearInterval(intervalGetGraph);
+        }
 
-            graphObj.nodes.stopUpdate();
-           //let nodes = JSON.parse(JSON.stringify(message.nodes))
-            //nodes.pos = nodes.pos.map((p)=>p*0.3);
-            //graphObj.nodes.createNodes(nodes, false);
-            //
-            //camera.position.set(0, nodes0.max_vals[2] * (1 + 2), 0);
-            graphObj.datGui.updateNodeColorProp(message.nodes.props)
-            graphObj.datGui.updateComunityField(Object.keys(graphObj.nodes.nodesGroup));
-            //datGui.updateEdgeColorProp(message.edges.props)
-            //camera.lookAt(nodes0.instancedNodes);
-            console.groupEnd();
+        graphObj.nodes.stopUpdate();
+        //let nodes = JSON.parse(JSON.stringify(message.nodes))
+        //nodes.pos = nodes.pos.map((p)=>p*0.3);
+        //graphObj.nodes.createNodes(nodes, false);
+        //
+        //camera.position.set(0, nodes0.max_vals[2] * (1 + 2), 0);
+        graphObj.datGui.updateNodeColorProp(message.nodes.props);
+        graphObj.datGui.updateComunityField(
+          Object.keys(graphObj.nodes.nodesGroup)
+        );
+        //datGui.updateEdgeColorProp(message.edges.props)
+        //camera.lookAt(nodes0.instancedNodes);
+        console.groupEnd();
 
-            break;
-
-        case "addNodes":
-            graphObj.nodes.createNodes(message.nodes, false);
-            if(graphObj.state.firstLoad){
-                graphObj.firstLoad = false;
-                graphObj.ressetLook();
-                clearInterval(intervalGetGraph)
-            }
-
-
-            break;
-        case "deleteNodes":
-            //message.info.nodesId.map(nodeId=>nodes0.deleteNode(nodeId));
-            //message.info.edgesName.map(edgeName=>edges0.deleteEdge(edgeName));
-            ////dataPoolSocket.recalcPos();
-            ////
-            //render()
-            break;
-
-        case "updatePos":
-            graphObj.nodes.updateNodePositions(message.info.pos);
-            graphObj.edges.updateNodePositions(message.info.pos);
-            graphObj.renderer.render()
-            break;
-
-        case "askToRenderMyImg":
-            const dataURI = graphObj.renderer.takeScreenshot(
-                message["width"],
-                message["height"],
-                message["transparency"],
-            )
-            dataPoolSocket.send2server(dataURI, message["time"]);
         break;
-        default:
-            break;
+
+      case "addNodes":
+        graphObj.nodes.createNodes(message.nodes, false);
+        if (graphObj.state.firstLoad) {
+          graphObj.firstLoad = false;
+          graphObj.ressetLook();
+          clearInterval(intervalGetGraph);
+        }
+
+        break;
+      case "deleteNodes":
+        //message.info.nodesId.map(nodeId=>nodes0.deleteNode(nodeId));
+        //message.info.edgesName.map(edgeName=>edges0.deleteEdge(edgeName));
+        ////dataPoolSocket.recalcPos();
+        ////
+        //render()
+        break;
+
+      case "updatePos":
+        graphObj.nodes.updateNodePositions(message.info.pos);
+        graphObj.edges.updateNodePositions(message.info.pos);
+        graphObj.renderer.render();
+        break;
+
+      case "askToRenderMyImg":
+        const dataURI = graphObj.renderer.takeScreenshot(
+          message["width"],
+          message["height"],
+          message["transparency"]
+        );
+        dataPoolSocket.send2server(dataURI, message["time"]);
+        break;
+      case "updateNodeColors":
+        graphObj.nodes.updateColors(message.colors, 'main');
+        graphObj.renderer.render();
+        break;
+
+      default:
+        break;
     }
 
 
