@@ -2,7 +2,63 @@ import socketio
 from PIL import Image
 from io import BytesIO
 from base64 import b64decode 
+import numpy as np
+import igraph as ig
 
+
+def ig2vis(g):
+    """Convert a igraph graph to a dict compatible with 
+    the viz
+    """
+    dataViz = {}
+    n = g.vcount()
+    nodes = {}    
+    defaultProps = g.vs[0].attribute_names()
+    posInProps = "pos" in defaultProps
+
+    if posInProps:
+        nodes["pos"] = []
+    else:
+        layout = g.layout_kamada_kawai_3d()
+        nodes["pos"] = np.array( layout.coords).flatten().tolist()
+
+        
+    nodesId = {
+        n:n for n in range(n)
+    }
+        
+    nodes["id"] = nodesId
+    nodes["props"] = defaultProps
+    for prop in defaultProps:
+        for node in g.vs:
+            if prop == "pos":
+                for node in g.vs:
+                    nodes["pos"] += list(n["pos"])
+            else:
+                nodes[prop] = []
+                for node in g.vs:
+                    nodeInfo = node
+                    value = nodeInfo[prop] if prop in node.attribute_names() else 0
+                    nodes[prop].append(value)
+
+
+    edges = {}
+    defaultEdgeProps = g.es[0].attribute_names()
+
+
+    edges["nodes"] = [[e.source, e.target] for e in g.es]
+    for prop in defaultEdgeProps:
+        edges[prop] = [e[prop] for e in g.es]
+
+    edges["props"] = defaultEdgeProps
+    dataViz["n"] = n
+    dataViz["nodes"] = nodes
+    dataViz["edges"] = edges
+
+    dataViz["numNodes"] = n
+    dataViz["defaultProps"] = defaultProps
+    dataViz["defaultEdgeProps"] = defaultEdgeProps
+    return dataViz
 
 def b64toImg(imgURI):
     imgdata = b64decode(imgURI.split(",")[1])
@@ -41,6 +97,12 @@ class StDoGClient(socketio.Client):
     def start(self):
         pass
         
+    def sendGraph(self, g):
+        self.dataViz = ig2vis(g)
+        self.emit("newGraph", callback=lambda msg:print(msg), 
+                  data=self.dataViz)
+        
+
     def storeImg(self, imgURI):
     
         if self.saveImgHistory:

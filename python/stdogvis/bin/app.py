@@ -138,12 +138,34 @@ def loadGraph(fileName):
     State["defaultProps"] = defaultProps
     State["defaultEdgeProps"] = defaultEdgeProps
 
+@socketio.on("newGraph")
+def recivingNewGraph(dataViz):
+    global State
+    logging.info("reciving a new graph")
+    State["nodes"] = dataViz["nodes"]
+    State["edges"] = dataViz["edges"]
+
+    State["graphLoaded"] = True
+    State["numNodes"] = dataViz["n"]
+    State["defaultProps"] = dataViz["defaultProps"]
+    State["defaultEdgeProps"] = dataViz["defaultEdgeProps"]
+
+    data = {"type":"yourGraphData", 
+            "nodes":State["nodes"], "edges": State["edges"],
+            "defaultProps":State["defaultProps"]}
+ 
+    emit("webClientListener", data, room="webClient")
+
+    return {"state": "success", "msg":"graph recived"}  
+
+ 
 @socketio.on("getGraph")
 def getGraph():
     logging.info("Get  Nodes Info")
     if State["graphLoaded"]:
-        data = {"type":"yourGraphData", "nodes":State["nodes"], "edges": State["edges"],
-                "defaultProps":State["defaultProps"]}
+        data = {"type":"yourGraphData", 
+            "nodes":State["nodes"], "edges": State["edges"],
+            "defaultProps":State["defaultProps"]}
     else:
         data = {"type": "fail", "msg":"load the graph first"}
 
