@@ -28,24 +28,25 @@ module.exports = env => {
             __ENV__: JSON.stringify(env.NODE_ENV)
         })
     ];
-
-
-
+    
+    
+    
     // Prod environment
     if (env.NODE_ENV === 'prod') {
         devtool = 'hidden-source-map';
         mode = 'production';
         stats = 'none';
-        outputPath = outputDir;
+        outputPath = path.join(__dirname, "build/js");
+        outputDir = path.join(__dirname, "build");
     }
-
+    
     console.log('Webpack build -');
     console.log(`    - ENV: ${env.NODE_ENV}`);
     console.log(`    - outputPath  ${outputPath}`);
     console.log(`    - includePath ${includePath}`);
     console.log(`    - nodeModulesPath: ${nodeModulesPath}`);
-
-
+    
+    
     const compilerWebClientJs ={
         name: "webClientJs",
         entry: [
@@ -76,7 +77,7 @@ module.exports = env => {
                     },
                     include: includePath,
                     exclude: nodeModulesPath,
-
+                    
                 }
                 //{
                 //test: /\.html$/,
@@ -88,9 +89,10 @@ module.exports = env => {
                 ////},
                 //]
                 //}
+
             ]
         },
-
+        
         // options for resolving module requests
         // (does not apply to resolving to loaders)
         resolve: {
@@ -99,52 +101,52 @@ module.exports = env => {
                 'node_modules',
                 path.resolve(__dirname, 'src')
             ],
-
+            
             extensions: ['.js', '.json'],
         },
-
+        
         performance: {
             hints: 'warning'
         },
-
+        
         // lets you precisely control what bundle information gets displayed
         stats,
-
+        
         // enhance debugging by adding meta info for the browser devtools
         // source-map most detailed at the expense of build speed.
         //devtool,
         devtool: 'source-map',
-
+        
         devServer: {
             contentBase: 'public',
             open: true, 
-            openPage: 'localhost:9001?use2d=0&highQuality=1&bloom=0&address=localhost:5000',
+            openPage: 'localhost:9001?use2d=0&highQuality=1&bloom=0&address=localhost:',
             port: 9001,
             watchOptions: {
                 aggregateTimeout: 200,
                 poll: 1000
             }
         },
-
-        plugins: plugins.concat(
+        
+        plugins:[
             new HtmlWebpackPlugin({
                 title: 'stdogViz',
                 template: path.join(__dirname, 'src/html/index.html'),
-                filename: 'public/index.html',
+              //  filename: path.join(__dirname, 'public/index.html'),
                 env: env.NODE_ENV,
             }),
-        ),
+        ],
         optimization: {
             minimizer: [
-            new UglifyJsPlugin({
-            cache: true,
-            parallel: true,
-            sourceMap: true // set to true if you want JS source maps
-            }),
-            //new OptimizeCSSAssetsPlugin({})
+                new UglifyJsPlugin({
+                    cache: true,
+                    parallel: true,
+                    sourceMap: true // set to true if you want JS source maps
+                }),
+                //new OptimizeCSSAssetsPlugin({})
             ],
             runtimeChunk: 'single',
-
+            
             splitChunks: {
                 cacheGroups: {
                     vendor: {
@@ -186,7 +188,7 @@ module.exports = env => {
                     },
                     include: includePath,
                     exclude: nodeModulesPath,
-
+                    
                 },
                 //{
                 //test: /\.html$/,
@@ -200,7 +202,7 @@ module.exports = env => {
                 //}
             ]
         },
-
+        
         // options for resolving module requests
         // (does not apply to resolving to loaders)
         resolve: {
@@ -209,28 +211,28 @@ module.exports = env => {
                 'node_modules',
                 path.resolve(__dirname, 'src')
             ],
-
+            
             extensions: ['.js', '.json'],
         },
-
+        
         performance: {
             hints: 'warning'
         },
-
+        
         // lets you precisely control what bundle information gets displayed
         stats,
-
+        
         // enhance debugging by adding meta info for the browser devtools
         // source-map most detailed at the expense of build speed.
         devtool,
-
+        
         devServer: {
             contentBase: 'src/public',
-
+            
             open:false,
             hot:true,
         },
-
+        
         optimization: {
             //minimizer: [
             //new UglifyJsPlugin({
@@ -241,7 +243,7 @@ module.exports = env => {
             //////new OptimizeCSSAssetsPlugin({})
             //],
             //runtimeChunk: 'single',
-
+            
             //splitChunks: {
             //cacheGroups: {
             //vendor: {
@@ -251,10 +253,10 @@ module.exports = env => {
             //},
             //}
             //}
-
+            
         }
     };
-
+    
     return [
         compilerWebClientJs,
         //compilerJupyterClient

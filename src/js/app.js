@@ -4,10 +4,7 @@ import Config from './data/config';
 import DataPool from "./connections/dataPool";
 
 
-if(__ENV__ === 'dev') {
-  console.info('----- RUNNING IN DEV ENVIRONMENT! -----');
-  Config.isDev = true;
-}
+Config.isDev = true;
 
 
 function keyboardPressFunction(key, action) {
@@ -127,7 +124,7 @@ function listenerFunction(message) {
                 message["height"],
                 message["transparency"],
             )
-            dataPoolSocket.send2server(dataURI);
+            dataPoolSocket.send2server(dataURI, message["time"]);
         break;
         default:
             break;

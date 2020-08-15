@@ -4,7 +4,7 @@ from io import BytesIO
 from base64 import b64decode 
 import numpy as np
 import igraph as ig
-
+import time
 
 def ig2vis(g):
     """Convert a igraph graph to a dict compatible with 
@@ -79,14 +79,14 @@ class CustomNamespace(socketio.ClientNamespace):
         
     def on_reciveRenderedImg(self, data):
         print("recived img")
-        self.client.storeImg(data["imgURI"])
+        self.client.storeImg(data['imgURI'], data['time'])
 
 class StDoGClient(socketio.Client):
     def __init__(self, 
                  namespace=None,saveImgHistory=False):
         super().__init__()
         
-        self.imgURI = []
+        self.imgURI = {} 
         self.saveImgHistory = saveImgHistory
         
     def external(self, address='http://localhost:5000', namespace=""):
@@ -103,19 +103,24 @@ class StDoGClient(socketio.Client):
                   data=self.dataViz)
         
 
-    def storeImg(self, imgURI):
+    def storeImg(self, imgURI, time):
     
         if self.saveImgHistory:
-            self.imgURI.append(imgURI)
+            self.imgURI[time]=imgURI
         else:
-            self.imgURI = [imgURI]
+            self.imgURI[time]=imgURI
         
     def getImg(self, historyId=0):
-        img = b64toImg(self.imgURI[::-1][historyId])
+        i = np.sort(list(self.imgURI.keys()))[::-1][historyId]
+        img = b64toImg(self.imgURI[i])
         self.img = img
         return img
     
     def renderMyImg(self, width=200, height=200, transparency=True):
         self.emit("renderMyImg", callback=lambda msg:print(msg), 
-                  data={"width":width, "height":height, "transparency":transparency})
+                  data={
+                    "width":width, "height":height,
+                    "transparency":transparency,
+                    "time":time.time(),
+                  })
             

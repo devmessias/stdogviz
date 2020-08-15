@@ -2,13 +2,9 @@
 <html lang="en">
   <head>
 
-    <%= require('html-loader!./components/imports.html') %>
     <meta charset="UTF-8">
 <style>
-    <%= require('html-loader!./components/main.css') %>
-    <%= require('html-loader!./components/rStats.css') %>
 </style>
-    <title><%= htmlWebpackPlugin.options.title %></title>
 
   </head>
 
@@ -22,12 +18,6 @@
                 id="datGuigraphCanvas">
             </div>
         </div>
-
-    <%= require('html-loader!./components/modalSave.html') %>
-    <% if (htmlWebpackPlugin.options.env === 'dev') { %>
-       <% } %>
-       <script src="libs/rStats.js"></script>
-    <script src="libs/rStats.extras.js"></script>
 
     <!--<script src="js/dat.gui.min.js"></script>-->
     <!--<script type="module" src="js/main.js"></script>-->

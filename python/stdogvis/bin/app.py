@@ -186,7 +186,8 @@ def askToRenderMyImg(props):
 
     data = {"type": "askToRenderMyImg", "msg":"",
     "width":props["width"], "height":props["height"],
-    "transparency":props["transparency"]
+    "transparency":props["transparency"],
+    'time': props['time'] 
     }
     if sid is None:
 
@@ -214,7 +215,7 @@ def sendRenderedImg(data):
     print("\n\n rendered img \n\n\n")
     State["imgURI"] = data["imgURI"]
     data = {"type": "askToRenderMyImg", "msg":"",
-        "imgURI": data["imgURI"]
+        "imgURI": data["imgURI"], 'time': data['time']
     }
     emit("reciveRenderedImg", data,
         room="pyObj")
