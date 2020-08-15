@@ -33,7 +33,7 @@ def ig2vis(g):
         for node in g.vs:
             if prop == "pos":
                 for node in g.vs:
-                    nodes["pos"] += list(n["pos"])
+                    nodes["pos"] += list(node["pos"])
             else:
                 nodes[prop] = []
                 for node in g.vs:
