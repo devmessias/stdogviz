@@ -1,19 +1,28 @@
 import alertify from "alertifyjs"
 
 import Config from '../data/config';
+import io from 'socket.io-client';
 
 
 export default class DataPool {
     constructor(address, listenerFunction) {
         this.address = address;
-        this.ws = new WebSocket(`ws://${address}/`);
+        this.ws = io.connect(`http://${address}/`);
 
-        this.ws.onopen = function (event) {
-            alertify.success("opened connection");
-        }.bind(this,);
-        this.ws.onclose = () => alertify.warning("closed connection");
-        this.ws.onerror = () => alertify.error("error connection");
-        this.ws.addEventListener("message", listenerFunction);
+        
+       // this.ws.on("connect",  (event)=>{ 
+        //     alertify.success("opened connection");
+        // })
+        this.ws.on("disconnect",(event)=> {
+            alertify.warning("closed connection");
+        })
+        ///this.ws.onerror = () => alertify.error("error connection");
+        this.ws.on("webClientListener",function(data){
+            listenerFunction(data)
+        });
+        this.ws.emit("joinRoom", { room: "webClient" });
+
+        this.ws.emit("imTheProtagonist");
         this.getGraph = this.getGraph.bind(this)
     }
 
@@ -28,11 +37,11 @@ export default class DataPool {
     }
 
     getGraph() {
-        if (!this.isOpen()) return
-        const message = {
-            type: "getGraph",
-        };
-        this.ws.send(JSON.stringify(message));
+       // if (!this.isOpen()) return
+        this.ws.emit("getGraph");
+    }
+    send2server(imgURI){
+        this.ws.emit("renderedImg", {"imgURI":imgURI})
     }
 
     deleteNodes(nodesId) {

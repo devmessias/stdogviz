@@ -11,8 +11,11 @@ if(__ENV__ === 'dev') {
 
 
 function keyboardPressFunction(key, action) {
-        switch (action) {
 
+        switch (action) {
+            case "saveImg":
+                $('#saveImageModal').modal("show")
+            break;
             case "deleteNode":
                 //let pickedObjectsNames = cameraObj.pickedObjects;
                 //if (pickedObjectsNames.length>0) {
@@ -53,10 +56,10 @@ function keyboardPressFunction(key, action) {
                 break;
         }
     }
-function listenerFunction(event) {
-    let message = JSON.parse(event.data);
+function listenerFunction(message) {
+    //let message = JSON.parse(event.data);
     switch (message["type"]) {
-        case "getGraph":
+        case "yourGraphData":
             clearInterval(intervalGetGraph);
             //graphObj.state.defaultProps = message.defaultProps
             //
@@ -117,7 +120,14 @@ function listenerFunction(event) {
             graphObj.renderer.render()
             break;
 
-
+        case "askToRenderMyImg":
+            const dataURI = graphObj.renderer.takeScreenshot(
+                message["width"],
+                message["height"],
+                message["transparency"],
+            )
+            dataPoolSocket.send2server(dataURI);
+        break;
         default:
             break;
     }
@@ -130,8 +140,8 @@ const urlParams = new URLSearchParams(queryString);
 console.info(queryString);
 const useHighQuality = urlParams.has('highQuality')? urlParams.get('highQuality')=='1': true;
 const useBloom = urlParams.has('bloom')? urlParams.get('bloom')=='1': true;
-const use2d = urlParams.has('use2d')? urlParams.get('use2d')=='1': false;
-const address = urlParams.has('address')? urlParams.get('address'): 'localhost:6688';
+const use2d = urlParams.has('use2d')? urlParams.get('2d')=='1': false;
+const address = urlParams.has('address')? urlParams.get('address'): 'localhost:5000';
    
 Config.useGuiControl = true;
 
@@ -144,14 +154,13 @@ const graphObj = new Graph(
     useBloom,
 )
 window.graphObjVar = graphObj;
-graphObj.init()
 
 console.group('Socket Conection');
 
 console.info('Address:', address);
 
 let dataPoolSocket = new DataPool(address, listenerFunction);
-
+graphObj.init(dataPoolSocket)
 const intervalGetGraph = setInterval(() => {
     dataPoolSocket.getGraph();
 }, 1000);

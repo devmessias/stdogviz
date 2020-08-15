@@ -118,7 +118,7 @@ module.exports = env => {
         devServer: {
             contentBase: 'public',
             open: true, 
-            openPage: 'localhost:9001?use2d=0&highQuality=1&bloom=0&address=localhost:6688',
+            openPage: 'localhost:9001?use2d=0&highQuality=1&bloom=0&address=localhost:5000',
             port: 9001,
             watchOptions: {
                 aggregateTimeout: 200,
@@ -130,7 +130,7 @@ module.exports = env => {
             new HtmlWebpackPlugin({
                 title: 'stdogViz',
                 template: path.join(__dirname, 'src/html/index.html'),
-                filename: '../index.html',
+                filename: 'public/index.html',
                 env: env.NODE_ENV,
             }),
         ),

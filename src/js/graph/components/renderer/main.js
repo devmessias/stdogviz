@@ -69,13 +69,14 @@ export default class Renderer {
         useHighQuality,
         useBloom,
         useStats,
-        scene, controls, container, canvas, camera, appState ) {
+        scene, controls, container, canvas, camera, appState , dataPool) {
         this.scene = scene;
         this.controls = controls;
         this.canvas = canvas;
         this.container = container;
         this.camera = camera
         this.appState = appState
+        this.dataPool = dataPool;
 
         //renderer.toneMapping = THREE.ReinhardToneMapping;
         this.useHighQuality = useHighQuality;
@@ -131,7 +132,7 @@ export default class Renderer {
         this.takeScreenshot = this.takeScreenshot.bind(this)
         const btnSave = document.getElementById("btnSaveImage");
         if(btnSave)
-            btnSave.addEventListener("click",  event=>this.takeScreenshot())
+            btnSave.addEventListener("click",  event=>this.takeScreenshotModal())
 
     }
     initComposer(){
@@ -307,7 +308,14 @@ export default class Renderer {
 
         return dataURI
     }
-    takeScreenshot(){
+    takeScreenshot(widthImage, heightImage, saveWithTransparency){
+        this.appState.takingScreenshot = true
+        this.appState.stopChanges = true
+
+        const DataURI = this.getURI(widthImage, heightImage, saveWithTransparency);
+        return DataURI
+    }
+    takeScreenshotModal(){
 
         $('#saveImageModal').modal("hide")
         this.appState.takingScreenshot = true
@@ -317,11 +325,13 @@ export default class Renderer {
 
         const saveWithTransparency = document.getElementById("saveWithTransparency").checked
 
+        const send2server = document.getElementById("send2server").checked;
 
         const DataURI = this.getURI(widthImage, heightImage, saveWithTransparency);
-        saveDataURI(defaultFileName( '.png' ), DataURI);
-
-
-
+        if (send2server && this.dataPool){
+            this.dataPool.send2server(DataURI)
+        }else{
+            saveDataURI(defaultFileName(".png"), DataURI);
+        }
     }
 }

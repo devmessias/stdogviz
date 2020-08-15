@@ -60,7 +60,8 @@ export default class Interaction {
             case "s":
                 document.getElementById("widthSaveImage").value = window.innerWidth
                 document.getElementById("heightSaveImage").value = window.innerHeight
-                $('#saveImageModal').modal("show")
+
+                this.keypressFunc (key,"saveImg")
 
             case "d":
                 if (this.appState.vimMode == "Edition")

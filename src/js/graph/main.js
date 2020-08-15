@@ -63,7 +63,7 @@ import DatGUI from './interactions/datGUI';
 
         //this.init = this.init.bind(this)
     }
-    init(){
+    init(dataPool=false){
         this.state = {
             vimMode: "Visual",
             isLoaded: false,
@@ -108,7 +108,8 @@ import DatGUI from './interactions/datGUI';
             this.useHighQuality,
             this.useBloom,
             this.useStats,
-            this.scene, this.controls, this.container, this.canvas, this.camera, this.state);
+            this.scene, this.controls, this.container, this.canvas, this.camera, this.state,
+            dataPool);
         console.groupEnd();
 
         if (this.Config.useGuiControl)
