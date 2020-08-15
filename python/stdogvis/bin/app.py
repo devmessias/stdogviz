@@ -3,6 +3,7 @@ from flask_socketio import SocketIO
 from flask import request
 from flask_socketio import join_room, leave_room
 from flask_socketio import send, emit
+import igraph as ig
 
 import pickle
 import time
@@ -46,6 +47,45 @@ availableRooms = {
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app,  cors_allowed_origins="*")
+
+def dummyGraph():
+    global g, State
+    n = 1000
+    g = ig.Graph.Erdos_Renyi(n, 3/n)
+    # defaultProps = g.vs[0].attribute_names()
+    defaultProps = ["pos", "degree"]
+
+    degree = g.degree()
+
+    layout = g.layout_kamada_kawai_3d()
+    coords = np.array( layout.coords).flatten().tolist()
+
+    nodesId = {
+        n:n for n in range(n)
+    }
+
+    nodes = {}
+    nodes["id"] = nodesId
+    nodes["props"] = defaultProps
+    nodes["pos"] = coords
+    nodes["degree"] = degree
+
+
+    # defaultEdgeProps = g.es[0].attribute_names()
+    defaultEdgeProps = []
+    edges = {}
+    edges["nodes"] = [[e.source, e.target] for e in g.es]
+    for prop in defaultEdgeProps:
+        edges[prop] = [d[prop] for d in edge_data]
+
+    edges["props"] = defaultEdgeProps
+    State["nodes"] = nodes
+    State["edges"] = edges
+
+    State["graphLoaded"] = True
+    State["numNodes"] = n
+    State["defaultProps"] = defaultProps
+    State["defaultEdgeProps"] = defaultEdgeProps
 
 def loadGraph():
     global g, State
@@ -203,9 +243,12 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", help="", type=str)
+    parser.add_argument("--test", action='store_true',)
     args = parser.parse_args()
-    filename ="graph.ml"
-    if args.file:
+    if args.test:
+        dummyGraph()
+
+    elif args.file:
         State["filename"] = args.file
         logging.info("Loading from file " + args.file)
         loadGraph()
