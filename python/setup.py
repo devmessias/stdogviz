@@ -11,7 +11,7 @@ setup(
     scripts=["stdogviz/bin/stdogviz"],
     # long_description=README_TEXT,
     install_requires=[
-        "flask", "python-igraph", "flask-socketio",
+        "Flask", "python-igraph", "flask-socketio",
         "python-socketio[client]", "numpy", "Pillow"
     ],
     include_package_data=True,
