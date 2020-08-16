@@ -145,9 +145,9 @@ const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 
 console.info(queryString);
-const useHighQuality = urlParams.has('highQuality')? urlParams.get('highQuality')=='1': true;
+const useHighQuality = urlParams.has('highQuality')? urlParams.get('highQuality')=='1': false;
 const useBloom = urlParams.has('bloom')? urlParams.get('bloom')=='1': true;
-const use2d = urlParams.has('use2d')? urlParams.get('2d')=='1': false;
+const use2d = urlParams.has('use2d')? urlParams.get('use2d')=='1': false;
 const address = urlParams.has('address')? urlParams.get('address'): 'localhost:5000';
 const showStats = urlParams.has('stats')? urlParams.get('stats')=='1': false;
 

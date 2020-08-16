@@ -46,7 +46,7 @@ export default class DatGUI {
             render()
         });
 
-        sceneFolder.open()
+        
         /* Nodes */
         let nodesFolder = gui.addFolder('Nodes');
         this.comunityField = nodesFolder.add(appState, "comunityField", appState.comunityField)
@@ -120,7 +120,6 @@ export default class DatGUI {
 
 
 
-        nodesFolder.open()
         this.nodesFolder = nodesFolder
 
         /* Edges */
@@ -135,14 +134,20 @@ export default class DatGUI {
         //.onChange((color) => {
         //edges0.changeColor(color)
         //});
+        edgesFolder.add(Config.edges, 'opacity', 0, 1).name('Opacity').onChange((value) => {
+            edges0.changeOpacity(value)
 
+            render();
+            //node.material.opacity=value;
+        });
 
+     edgesFolder.add(Config.edges, 'width', 0.0, 5, 0.01).name('Width').onChange((value) => {
+            edges0.changeWidth(value)
+            render()
+            //node.material.opacity=value;
+        });
         let colorEdge = {prop:[], field:[]}
-        this.colorEdgeProp = edgesFolder.add(colorEdge, "prop", colorEdge.prop)
-            .name("Color by Prop.")
-            .onChange(function(value) {
-                edges0.colorByProp(value)
-            });
+     
         this.colorEdgeField = edgesFolder.add(colorEdge, "field", colorEdge.prop)
             .name("Color by Field.")
             .onChange(function(value) {
@@ -153,6 +158,10 @@ export default class DatGUI {
         //nodes0.changeScale(value)
         ////node.material.opacity=value;
         //});
+        edgesFolder.addColor(Config.edges, "color").name('Color').onChange((color) => {
+            edges0.changeColorUniform(color)
+            render()
+        });
         edgesFolder.add(Config.edges, 'opacity', 0, 1).name('Opacity').onChange((value) => {
             edges0.changeOpacity(value)
             //node.material.opacity=value;
@@ -197,7 +206,6 @@ export default class DatGUI {
         //bloomPassEdges.radius = Number( value );
         //render();
         //} );
-        edgesFolder.open()
         let renderFolder = gui.addFolder('Render');
         renderFolder.add( Config.bloomPass, 'exposure', 0.1, 5 ).onChange( function ( value ) {
 
@@ -225,8 +233,10 @@ export default class DatGUI {
             render()
 
         } );
-
-        renderFolder.open()
+        //nodesFolder.open()
+        //sceneFolder.open()
+        //edgesFolder.open()
+        //renderFolder.open()
 
         /* Controls */
         //const controlsFolder = gui.addFolder('Controls');

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import colormap from "colormap"
 import alertify  from "alertifyjs"
-
+import {MeshLine} from "three";
 
 export default class Edges {
     constructor(scene, layer, bloomLayer) {
@@ -37,7 +37,19 @@ export default class Edges {
         this.instancedEdges.geometry.attributes.position.needsUpdate = true
         this.instancedEdges.geometry.computeBoundingSphere();
     }
+    changeColorUniform(colorHex){
 
+        let color = new THREE.Color(colorHex);
+        this.instancedEdges.material.color = color;
+        this.instancedEdges.material.needsUpdate = true;
+  
+    }
+     changeWidth(width){
+
+        this.instancedEdges.material.linewidth = width;
+        this.instancedEdges.material.needsUpdate = true;
+  
+    }
     colorByProp(prop){
         let colors = colormap({
             colormap: "jet",
@@ -122,7 +134,7 @@ export default class Edges {
             //positions.push( x, y, z );
             //colors.push(...nodesData.color[t])
             //colors.push(...nodesData.color[s])
-            colors.push(...[1, 1, 1, 1, 1,1])
+            //colors.push(...[1, 1, 1, 1, 1,1])
             //colors.push(0.8);
             //colors.push(0.8);
             //colors.push(0.8);
@@ -157,13 +169,14 @@ export default class Edges {
         this.createVertices(nodesData, edgesData)
         var geometry = new THREE.BufferGeometry();
         var material = new THREE.LineBasicMaterial( {
-            vertexColors: true,
-            //blending: THREE.AdditiveBlending,
+            vertexColors: false,
+            blending: THREE.AdditiveBlending,
             transparent:true,
-            opacity:0.4, linewidth:1 } );
+            color: 0xfff,
+            opacity:0.4, linewidth:2 } );
 
         geometry.setAttribute( "position", new THREE.Float32BufferAttribute( this.positions, 3 ) );
-        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3 ) );
+        //geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3 ) );
 
         geometry.computeBoundingSphere();
 
