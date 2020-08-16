@@ -127,4 +127,6 @@ class StDoGClient(socketio.Client):
                     "transparency":transparency,
                     "time":time.time(),
                   })
+
+__all__ = ["StDoGClient"]
             
