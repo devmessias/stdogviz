@@ -17,7 +17,6 @@ import numpy as np
 # TODO : CLOSE SERVER
 # TODO: CLOSE ALL WEB PAGES
 # TODO: CLOSE ALL HTTP.SERVER
-# TODO: INDEX HTML RENDERIZAR APP PADRAO
 
         # format='{%(pathname)s:%(lineno)d} %(levelname)s - %(message)s',
 logging.basicConfig(
@@ -42,7 +41,7 @@ availableRooms = {
 }
 
    
-app = Flask(__name__)
+app = Flask(__name__, template_folder="html", static_folder="html/", static_url_path="/")
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app,  cors_allowed_origins="*")
 
