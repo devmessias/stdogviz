@@ -4,8 +4,11 @@ import Config from './data/config';
 import DataPool from "./connections/dataPool";
 
 
-Config.isDev = true;
-
+if (__ENV__ === 'dev') {
+  Config.isDev = true;
+}else{
+  Config.isDev = false;
+}
 
 function keyboardPressFunction(key, action) {
 

@@ -10,6 +10,10 @@ setup(
     packages=find_packages(exclude=["build", ]),
     scripts=["stdogviz/bin/stdogviz"],
     # long_description=README_TEXT,
+    include_package_data=True,
+    package_data={
+        "data": ["data/db_abbrev.json"]
+    },
     install_requires=[
         "Flask", "python-igraph", "flask-socketio",
         "python-socketio[client]", "numpy", "Pillow"
