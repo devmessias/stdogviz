@@ -52,7 +52,7 @@ export default class DatGUI {
         this.comunityField = nodesFolder.add(appState, "comunityField", appState.comunityField)
             .name("Comunity")
             .onChange(function(value) {
-                nodes0.setComunity(value)
+                nodes0.setGroup(value)
             });
         let markers = {
             marker : {

@@ -4,6 +4,9 @@ from io import BytesIO
 from base64 import b64decode 
 import numpy as np
 import igraph as ig
+
+from subprocess import Popen, PIPE
+
 import time
 
 def ig2vis(g):
@@ -93,14 +96,21 @@ class StDoGClient(socketio.Client):
         self.register_namespace(CustomNamespace(namespace))
         self.connect(address, headers={}, )
 
-    # TODO: this should create a flask server and conect with
-    def start(self):
-        pass
+    def start(self, silent=False):
+        cmd = ['stdogviz', '--test']
+        if silent:
+            cmd += ["--silent"]
+
+        process = Popen(cmd, shell=False,)
+           # check=True, text=True)
+        # stdout=PIPE, stderr=PIPE)
+        # stdout, stderr = process.communicate()
         
-    def sendGraph(self, g):
-        self.dataViz = ig2vis(g)
+    def sendGraph(self, g, group="main"):
+        dataViz = ig2vis(g)
+        dataViz["group"] = group
         self.emit("newGraph", callback=lambda msg:print(msg), 
-                  data=self.dataViz)
+                  data=dataViz)
         
 
     def storeImg(self, imgURI, time):
@@ -116,10 +126,15 @@ class StDoGClient(socketio.Client):
         self.img = img
         return img
 
-    def updateNodeColors(self, colors):
+    def updateNodeColors(self, colors, group='main'):
         colors = list(colors.flatten())
-        self.emit("updateNodeColors", data={'colors':colors})
+        self.emit("updateNodeColors", data={'colors':colors, 'group':group})
     
+    def updateNodePostions(self, positions, group='main'):
+        positions = list(positions.flatten())
+        self.emit("updateNodePositions", data={'positions':positions, 'group':group})
+    
+
     def renderMyImg(self, width=200, height=200, transparency=True):
         self.emit("renderMyImg", callback=lambda msg:print(msg), 
                   data={

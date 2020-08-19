@@ -77,7 +77,7 @@ function listenerFunction(message) {
 
         console.group("createNodes");
         console.time("creatingNodes");
-        graphObj.nodes.createNodes(message.nodes, true);
+        graphObj.nodes.createNodes(message.nodes, false, message.group);
         console.timeEnd("creatingNodes");
         console.groupEnd();
         if (graphObj.state.firstLoad) {
@@ -103,7 +103,7 @@ function listenerFunction(message) {
         break;
 
       case "addNodes":
-        graphObj.nodes.createNodes(message.nodes, false);
+        graphObj.nodes.createNodes(message.nodes, group=message.group);
         if (graphObj.state.firstLoad) {
           graphObj.firstLoad = false;
           graphObj.ressetLook();
@@ -119,9 +119,9 @@ function listenerFunction(message) {
         //render()
         break;
 
-      case "updatePos":
-        graphObj.nodes.updateNodePositions(message.info.pos);
-        graphObj.edges.updateNodePositions(message.info.pos);
+      case "updateNodePositions":
+        graphObj.nodes.updateNodePositions(message.positions, message.group);
+        graphObj.edges.updateNodePositions(message.positions, message.group);
         graphObj.renderer.render();
         break;
 
@@ -134,7 +134,7 @@ function listenerFunction(message) {
         dataPoolSocket.send2server(dataURI, message["time"]);
         break;
       case "updateNodeColors":
-        graphObj.nodes.updateColors(message.colors, 'main');
+        graphObj.nodes.updateColors(message.colors, message.group);
         graphObj.renderer.render();
         break;
 
@@ -149,7 +149,7 @@ const urlParams = new URLSearchParams(queryString);
 
 console.info(queryString);
 const useHighQuality = urlParams.has('highQuality')? urlParams.get('highQuality')=='1': false;
-const useBloom = urlParams.has('bloom')? urlParams.get('bloom')=='1': true;
+const useBloom = urlParams.has('bloom')? urlParams.get('bloom')=='1': false;
 const use2d = urlParams.has('use2d')? urlParams.get('use2d')=='1': false;
 const address = urlParams.has('address')? urlParams.get('address'): 'localhost:5000';
 const showStats = urlParams.has('stats')? urlParams.get('stats')=='1': false;

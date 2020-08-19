@@ -30,6 +30,7 @@ USERS = set()
 State = {
     "graphLoaded": False,
     "defaultProps": {},
+    "graphData": {},
     "useHelios": True,
     "imgURI":None, 
     "mainRenderSid":None, # sesson id of the webclient which will render the img 
@@ -77,15 +78,15 @@ def dummyGraph():
         edges[prop] = [d[prop] for d in edge_data]
 
     edges["props"] = defaultEdgeProps
-    State["nodes"] = nodes
-    State["edges"] = edges
-
     State["graphLoaded"] = True
-    State["numNodes"] = n
+    State["graphData"]["main"] = {}
+    State["graphData"]["main"]["numNodes"] = n
+    State["graphData"]["main"]["nodes"] = nodes
+    State["graphData"]["main"]["edges"] = edges
     State["defaultProps"] = defaultProps
     State["defaultEdgeProps"] = defaultEdgeProps
 
-def loadGraph(fileName):
+def loadGraph(fileName, group="main"):
     global g, State
     g = ig.read(fileName)
 
@@ -131,29 +132,35 @@ def loadGraph(fileName):
 
     edges["props"] = defaultEdgeProps
 
-    State["nodes"] = nodes
-    State["edges"] = edges
 
     State["graphLoaded"] = True
-    State["numNodes"] = n
     State["defaultProps"] = defaultProps
     State["defaultEdgeProps"] = defaultEdgeProps
+
+    State["graphData"][group] = {}
+    State["graphData"][group]["numNodes"] = n
+    State["graphData"][group]["nodes"] = nodes
+    State["graphData"][group]["edges"] = edges
 
 @socketio.on("newGraph")
 def recivingNewGraph(dataViz):
     global State
     logging.info("reciving a new graph")
-    State["nodes"] = dataViz["nodes"]
-    State["edges"] = dataViz["edges"]
+
+    group = dataViz["group"]
 
     State["graphLoaded"] = True
-    State["numNodes"] = dataViz["n"]
+
+    State["graphData"][group] = {}
+    State["graphData"][group]["nodes"] = dataViz["nodes"]
+    State["graphData"][group]["edges"] = dataViz["edges"]
+    State["graphData"][group]["numNodes"] = dataViz["n"]
     State["defaultProps"] = dataViz["defaultProps"]
     State["defaultEdgeProps"] = dataViz["defaultEdgeProps"]
 
     data = {"type":"yourGraphData", 
-            "nodes":State["nodes"], "edges": State["edges"],
-            "defaultProps":State["defaultProps"]}
+            "nodes":dataViz["nodes"], "edges": dataViz["edges"],
+            "defaultProps":State["defaultProps"], "group":group}
  
     emit("webClientListener", data, room="webClient")
 
@@ -164,15 +171,19 @@ def recivingNewGraph(dataViz):
 def getGraph():
     logging.info("Get  Nodes Info")
     if State["graphLoaded"]:
-        data = {"type":"yourGraphData", 
-            "nodes":State["nodes"], "edges": State["edges"],
-            "defaultProps":State["defaultProps"]}
+        for group in State["graphData"].keys():
+            data = {"type":"yourGraphData", 
+                "nodes":State["graphData"][group]["nodes"], 
+                "edges": State["graphData"][group]["edges"],
+                "group": group,
+                "defaultProps":State["defaultProps"]}
+
+            emit("webClientListener", data, room=request.sid)
     else:
         data = {"type": "fail", "msg":"load the graph first"}
-
+        emit("webClientListener", data, room=request.sid)
     #message = json.dumps(data)
     
-    emit("webClientListener", data, room=request.sid)
 
 
 @app.route('/')
@@ -225,11 +236,20 @@ def sendRenderedImg(data):
 def updateNodeColors(data):
     data = {"type": "updateNodeColors", "msg":"",
         'colors': data['colors'],
+        'group': data['group']
     }
     emit("webClientListener", data,
         room="webClient")
 
-
+@socketio.on('updateNodePositions')
+def updateNodePositions(data):
+    print(data)
+    data = {"type": "updateNodePositions", "msg":"",
+        'positions': data['positions'],
+        "group": data["group"]
+    }
+    emit("webClientListener", data,
+        room="webClient")
 
 @socketio.on('joinRoom')
 def joinRoom(data):
@@ -277,6 +297,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--file", help="", type=str)
     parser.add_argument("--test", action='store_true',)
+    parser.add_argument("--silent", action='store_true',)
     args = parser.parse_args()
     if args.test:
         dummyGraph()
@@ -285,5 +306,9 @@ if __name__ == '__main__':
         State["filename"] = args.file
         logging.info("Loading from file " + args.file)
         loadGraph(args.file)
+
+    if args.silent is False:
+        import webbrowser
+        webbrowser.open("http:/localhost:5000", new=2)
 
     socketio.run(app, debug=False)

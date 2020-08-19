@@ -39,7 +39,9 @@ export default class Nodes {
      *  then set the selecedGroupName as a empty string
      **/
     setGroup(groupName){
-        this.selectedGroupName = Object.keys(this.nodesGroup).includes(value)? value : '';
+        this.selectedGroupName = Object
+            .keys(this.nodesGroup)
+            .includes(groupName)? groupName : 'main';
     }
     /**
      * Set the selected group
@@ -71,7 +73,7 @@ export default class Nodes {
         }
     }
 
-    updateColors(colors, nodesGroupName){
+    updateColors(colors, nodesGroupName="main"){
 
         let nodesObj = this.nodesGroup[nodesGroupName];
         if (nodesObj.fixedColor){
@@ -284,12 +286,22 @@ export default class Nodes {
         }
     }
 
-    updateNodePositions(positions){
-        this.instancedNodes.geometry.attributes.bufferNodePositions.array = new Float32Array(positions);
-        this.instancedNodes.geometry.attributes.bufferNodePositions.needsUpdate = true
+    updateNodePositions(positions, groupName="main"){
+        let nodesObj = this.nodesGroup[groupName];
+        nodesObj.mesh.geometry.attributes.bufferNodePositions.array = new Float32Array(positions);
+        nodesObj.mesh.geometry.attributes.bufferNodePositions.needsUpdate = true
     }
 
+    deleteNodes(nodesGroupName){
 
+        let nodesObj = this.nodesGroup[nodesGroupName];
+        nodesObj.mesh.geometry.dispose();
+        nodesObj.mesh.material.dispose();
+        nodesObj.mesh.geometry.needsUpdate = true;
+        nodesObj.mesh.material.needsUpdate = true;
+        this.scene.remove(nodesObj.mesh);
+        delete this.nodesGroup[nodesGroupName];
+    }
 
     deleteAllNodes(){
         for (const [key, nodesObj] of Object.entries(this.nodesGroup)) {
@@ -301,13 +313,16 @@ export default class Nodes {
             delete this.nodesGroup[key];
         }
     }
-    createNodes(nodesData,  clear=false) {
-        let nodesGroupName;
-        if (clear){
-            nodesGroupName = 'main';
-        }else{
-            nodesGroupName = nodesData.props.includes('name')? nodesData.name : randomString();
+    createNodes(nodesData,  clear=false, nodesGroupName="main") {
+
+        if (this.nodesGroup.hasOwnProperty(nodesGroupName)){
+            this.deleteNodes(nodesGroupName)
         }
+        // if (clear){
+        //     nodesGroupName = 'main';
+        // }else{
+        //     nodesGroupName = nodesData.props.includes('name')? nodesData.name : randomString();
+        // }
         console.info("Creating nodes", nodesGroupName);
 
 
