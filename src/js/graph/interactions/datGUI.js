@@ -1,280 +1,340 @@
 import * as THREE from "three";
-import * as dat from 'dat.gui';
+import * as dat from "dat.gui";
 
-import {availableMarkers} from "./../components/nodes/shaders/marker.fsh.js";
+import { availableMarkers } from "./../components/nodes/shaders/marker.fsh.js";
 
 /**
  * Update the dropdown itens related with a given datGUI element
  * @param  {DOMGui} datGUI select element
  * @param  {Array} Array of strings with the dropdown itens
  */
-function updateDropdown(target, list){
-    let innerHTMLStr = "";
-    for(var i=0; i<list.length; i++){
-        var str = "<option value='" + list[i] + "'>" + list[i] + "</option>";
-        innerHTMLStr += str;
-    }
+function updateDropdown(target, list) {
+  let innerHTMLStr = "";
+  for (var i = 0; i < list.length; i++) {
+    var str = "<option value='" + list[i] + "'>" + list[i] + "</option>";
+    innerHTMLStr += str;
+  }
 
-    if (innerHTMLStr != "") target.domElement.children[0].innerHTML = innerHTMLStr;
+  if (innerHTMLStr != "")
+    target.domElement.children[0].innerHTML = innerHTMLStr;
 }
 
 // Manages all dat.GUI interactions
 export default class DatGUI {
-    constructor(
-        idCanvasHTML,
-        scene, renderer,
-        camera,
-        nodes0, edges0,
-        Config,
-        appState) {
-        const gui = new dat.GUI({autoPlace:false, name:idCanvasHTML});
-        this.gui = gui
+  constructor(
+    idCanvasHTML,
+    scene,
+    renderer,
+    camera,
+    nodes0,
+    edges0,
+    Config,
+    appState
+  ) {
+    const gui = new dat.GUI({ autoPlace: false, name: idCanvasHTML });
+    this.gui = gui;
 
-        //container.appendChild(gui.domElement);
-        document.getElementById(`datGui${idCanvasHTML}`).appendChild(gui.domElement);
-        const render = renderer.render;
-        //canvas.appendChild(gui.domElement);
-        //this.camera = main.camera.threeCamera;
-        //this.controls = main.controls.threeControls;
-        //this.light = main.light;
+    //container.appendChild(gui.domElement);
+    document
+      .getElementById(`datGui${idCanvasHTML}`)
+      .appendChild(gui.domElement);
+    const render = renderer.render;
+    //canvas.appendChild(gui.domElement);
+    //this.camera = main.camera.threeCamera;
+    //this.controls = main.controls.threeControls;
+    //this.light = main.light;
 
-        /* Scene */
-        let sceneFolder = gui.addFolder('Scene');
+    /* Scene */
+    let sceneFolder = gui.addFolder("Scene");
 
-        sceneFolder.addColor(Config.scene, "color").name('Color').onChange((color) => {
-            scene.background = new THREE.Color(color)
-            render()
-        });
+    sceneFolder
+      .addColor(Config.scene, "color")
+      .name("Color")
+      .onChange((color) => {
+        scene.background = new THREE.Color(color);
+        render();
+      });
 
-        
-        /* Nodes */
-        let nodesFolder = gui.addFolder('Nodes');
-        this.comunityField = nodesFolder.add(appState, "comunityField", appState.comunityField)
-            .name("Comunity")
-            .onChange(function(value) {
-                nodes0.setGroup(value)
-            });
-        let markers = {
-            marker : {
-                "--" : ""
-            }
-        }
-        nodesFolder.add(markers, "marker", availableMarkers)
-            .name("marker")
-            .onChange(function(value) {
-                nodes0.changeMarker(value)
-                render();
-            });
-        nodesFolder.add( Config.nodes, 'show' ).onChange( function ( value ) {
-            for (let [nodeName, node] of Object.entries(nodes0.nodes)){
-                node.visible=value;
-            }
+    /* Nodes */
+    let nodesFolder = gui.addFolder("Nodes");
+    this.comunityField = nodesFolder
+      .add(appState, "comunityField", appState.comunityField)
+      .name("Comunity")
+      .onChange(function (value) {
+        nodes0.setGroup(value);
+      });
+    let markers = {
+      marker: {
+        "--": "",
+      },
+    };
+    nodesFolder
+      .add(markers, "marker", availableMarkers)
+      .name("marker")
+      .onChange(function (value) {
+        nodes0.changeMarker(value);
+        render();
+      });
+    nodesFolder.add(Config.nodes, "show").onChange(function (value) {
+      for (let [nodeName, node] of Object.entries(nodes0.nodes)) {
+        node.visible = value;
+      }
 
-            Config.nodes.show = value
-            render();
-        } );
+      Config.nodes.show = value;
+      render();
+    });
 
-        nodesFolder.addColor(Config.nodes, "color").name('Color').onChange((color) => {
-            nodes0.changeColor(color)
-            render()
-        });
-        this.sizeField = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
-            .name("Size Field")
-            .onChange(function(value) {
-                nodes0.sizeByField(value)
+    nodesFolder
+      .addColor(Config.nodes, "color")
+      .name("Color")
+      .onChange((color) => {
+        nodes0.changeColor(color);
+        render();
+      });
+    this.sizeField = nodesFolder
+      .add(appState, "defaultProps", appState.defaultProps)
+      .name("Size Field")
+      .onChange(function (value) {
+        nodes0.sizeByField(value);
 
-                render();
-            });
-        nodesFolder.add(Config.nodes, 'scale', 0.01, 10, 0.01).name('Scale').onChange((value) => {
-            nodes0.changeScale(value)
+        render();
+      });
+    nodesFolder
+      .add(Config.nodes, "scale", 0.01, 10, 0.01)
+      .name("Scale")
+      .onChange((value) => {
+        nodes0.changeScale(value);
 
-            render();
-            //node.material.opacity=value;
-        });
-        nodesFolder.addColor(Config.nodes, "edgeColor").name('Edge Color').onChange((color) => {
-            nodes0.changeEdgeColor(color)
-            render()
-        });
-        nodesFolder.add(Config.nodes, 'edgeWidth', 0.0, 1, 0.01).name('Edge Width').onChange((value) => {
-            nodes0.changeEdgeWidth(value)
-            render()
-            //node.material.opacity=value;
-        });
-        nodesFolder.add(Config.nodes, 'opacity', 0, 1).name('Opacity').onChange((value) => {
-            nodes0.changeOpacity(value)
+        render();
+        //node.material.opacity=value;
+      });
+    nodesFolder
+      .addColor(Config.nodes, "edgeColor")
+      .name("Edge Color")
+      .onChange((color) => {
+        nodes0.changeEdgeColor(color);
+        render();
+      });
+    nodesFolder
+      .add(Config.nodes, "edgeWidth", 0.0, 1, 0.01)
+      .name("Edge Width")
+      .onChange((value) => {
+        nodes0.changeEdgeWidth(value);
+        render();
+        //node.material.opacity=value;
+      });
+    nodesFolder
+      .add(Config.nodes, "opacity", 0, 1)
+      .name("Opacity")
+      .onChange((value) => {
+        nodes0.changeOpacity(value);
 
-            render();
-            //node.material.opacity=value;
-        });
+        render();
+        //node.material.opacity=value;
+      });
 
-        this.colorProp = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
-            .name("Color by Attr.")
-            .onChange(function(value) {
-                nodes0.colorByProp(value)
-            });
-        this.colorField = nodesFolder.add(appState, "defaultProps", appState.defaultProps)
-            .name("Color Field")
-            .onChange(function(value) {
-                nodes0.colorByField(value)
-            });
+    this.colorProp = nodesFolder
+      .add(appState, "defaultProps", appState.defaultProps)
+      .name("Color by Attr.")
+      .onChange(function (value) {
+        nodes0.colorByProp(value);
+      });
+    this.colorField = nodesFolder
+      .add(appState, "defaultProps", appState.defaultProps)
+      .name("Color Field")
+      .onChange(function (value) {
+        nodes0.colorByField(value);
+      });
 
+    this.nodesFolder = nodesFolder;
 
+    /* Edges */
+    let edgesFolder = gui.addFolder("Edges");
+    this.edgesGroupField = edgesFolder
+      .add(appState, "edgesGroupField", appState.edgesGroupField)
+      .name("Group")
+      .onChange(function (value) {
+        edges0.setGroup(value);
+      });
 
-        this.nodesFolder = nodesFolder
+    edgesFolder.add(Config.edges, "show").onChange(function (value) {
+      Config.edges.show = value;
+      render();
+    });
+    //edgesFolder.addColor(Config.edges, "color").name('Color')
+    //.onChange((color) => {
+    //edges0.changeColor(color)
+    //});
+    edgesFolder
+      .add(Config.edges, "opacity", 0, 1)
+      .name("Opacity")
+      .onChange((value) => {
+        edges0.changeOpacity(value);
 
-        /* Edges */
-        let edgesFolder = gui.addFolder('Edges');
+        render();
+        //node.material.opacity=value;
+      });
 
-        edgesFolder.add( Config.edges, 'show' ).onChange( function ( value ) {
+    edgesFolder
+      .add(Config.edges, "width", 0.0, 5, 0.01)
+      .name("Width")
+      .onChange((value) => {
+        edges0.changeWidth(value);
+        render();
+        //node.material.opacity=value;
+      });
+    let colorEdge = { prop: [], field: [] };
 
-            Config.edges.show = value
-            render();
-        } );
-        //edgesFolder.addColor(Config.edges, "color").name('Color')
-        //.onChange((color) => {
-        //edges0.changeColor(color)
-        //});
-        edgesFolder.add(Config.edges, 'opacity', 0, 1).name('Opacity').onChange((value) => {
-            edges0.changeOpacity(value)
+    this.colorEdgeField = edgesFolder
+      .add(colorEdge, "field", colorEdge.prop)
+      .name("Color by Field.")
+      .onChange(function (value) {
+        edges0.colorByField(value);
+      });
 
-            render();
-            //node.material.opacity=value;
-        });
+    //nodesFolder.add(Config.nodes, 'scale', 0.01, 5).name('Scale').onChange((value) => {
+    //nodes0.changeScale(value)
+    ////node.material.opacity=value;
+    //});
+    edgesFolder
+      .addColor(Config.edges, "color")
+      .name("Color")
+      .onChange((color) => {
+        edges0.changeColorUniform(color);
+        render();
+      });
+    edgesFolder
+      .add(Config.edges, "opacity", 0, 1)
+      .name("Opacity")
+      .onChange((value) => {
+        edges0.changeOpacity(value);
+        //node.material.opacity=value;
+      });
+    edgesFolder
+      .add(Config.edges, "blending", {
 
-     edgesFolder.add(Config.edges, 'width', 0.0, 5, 0.01).name('Width').onChange((value) => {
-            edges0.changeWidth(value)
-            render()
-            //node.material.opacity=value;
-        });
-        let colorEdge = {prop:[], field:[]}
-     
-        this.colorEdgeField = edgesFolder.add(colorEdge, "field", colorEdge.prop)
-            .name("Color by Field.")
-            .onChange(function(value) {
-                edges0.colorByField(value)
-            });
+        Additive: "Additive",
+        None: "None",
+        Normal: "Normal",
+        Subtractive: "Sub",
+        Multiply: "Multiply",
+      })
+      .name("Blending")
+      .onChange((value) => {
+        edges0.changeBlending(value);
+      });
 
-        //nodesFolder.add(Config.nodes, 'scale', 0.01, 5).name('Scale').onChange((value) => {
-        //nodes0.changeScale(value)
-        ////node.material.opacity=value;
-        //});
-        edgesFolder.addColor(Config.edges, "color").name('Color').onChange((color) => {
-            edges0.changeColorUniform(color)
-            render()
-        });
-        edgesFolder.add(Config.edges, 'opacity', 0, 1).name('Opacity').onChange((value) => {
-            edges0.changeOpacity(value)
-            //node.material.opacity=value;
-        });
+    //Edges Bloom
 
-        //Edges Bloom
+    //edgesFolder.addColor(Config.layers[edgesBloomScene], 'clearColor' ).onChange( function ( color ) {
 
-        //edgesFolder.addColor(Config.layers[edgesBloomScene], 'clearColor' ).onChange( function ( color ) {
+    //bloomPassEdges.clearColor.set(color)
+    //render()
+    //});
 
-        //bloomPassEdges.clearColor.set(color)
-        //render()
-        //});
+    //edgesFolder.add( Config.layers[edgesBloomScene], 'enabled' ).onChange( function ( value ) {
 
-        //edgesFolder.add( Config.layers[edgesBloomScene], 'enabled' ).onChange( function ( value ) {
+    //bloomPassEdges.enabled = value
+    //render();
+    //} );
+    //edgesFolder.add( Config.layers[edgesBloomScene], 'strength', 0.0, 2 ).onChange( function ( value ) {
+    ////bloomPassEdges.copyUniforms.opacity(value)
+    //bloomPassEdges.strength = value
+    //render();
+    //} );
 
-        //bloomPassEdges.enabled = value
-        //render();
-        //} );
-        //edgesFolder.add( Config.layers[edgesBloomScene], 'strength', 0.0, 2 ).onChange( function ( value ) {
-        ////bloomPassEdges.copyUniforms.opacity(value)
-        //bloomPassEdges.strength = value
-        //render();
-        //} );
+    //edgesFolder.add( Config.layers[edgesBloomScene], 'exposure', 0.01, 2 ).onChange( function ( value ) {
+    //renderer.toneMappingExposure = Math.pow( value, 1.0 );
+    //render();
+    //} );
 
+    //edgesFolder.add( Config.layers[edgesBloomScene], 'bloomThreshold', 0.0, 10 ).step(0.01).onChange( function ( value ) {
+    //bloomPassEdges.threshold = Number( value )/100;
+    //render();
+    //} );
 
-        //edgesFolder.add( Config.layers[edgesBloomScene], 'exposure', 0.01, 2 ).onChange( function ( value ) {
-        //renderer.toneMappingExposure = Math.pow( value, 1.0 );
-        //render();
-        //} );
+    //edgesFolder.add( Config.layers[edgesBloomScene], 'bloomStrength', 0.0, 2.0 ).onChange( function ( value ) {
+    //bloomPassEdges.strength = Number( value );
+    //render();
+    //} );
 
-        //edgesFolder.add( Config.layers[edgesBloomScene], 'bloomThreshold', 0.0, 10 ).step(0.01).onChange( function ( value ) {
-        //bloomPassEdges.threshold = Number( value )/100;
-        //render();
-        //} );
+    //edgesFolder.add( Config.layers[edgesBloomScene], 'bloomRadius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
+    //bloomPassEdges.radius = Number( value );
+    //render();
+    //} );
+    let renderFolder = gui.addFolder("Render");
+    renderFolder
+      .add(Config.bloomPass, "exposure", 0.1, 5)
+      .onChange(function (value) {
+        renderer.toneMappingExposure = Math.pow(value, 4.0);
+        render();
+      });
+    renderFolder
+      .add(Config.bloomPass, "threshold", 0.0, 1.0)
+      .onChange(function (value) {
+        renderer.bloomPass.threshold = Number(value);
+        render();
+      });
 
-        //edgesFolder.add( Config.layers[edgesBloomScene], 'bloomStrength', 0.0, 2.0 ).onChange( function ( value ) {
-        //bloomPassEdges.strength = Number( value );
-        //render();
-        //} );
+    renderFolder
+      .add(Config.bloomPass, "strength", 0.0, 10.0)
+      .onChange(function (value) {
+        renderer.bloomPass.strength = Number(value);
+        render();
+      });
 
-        //edgesFolder.add( Config.layers[edgesBloomScene], 'bloomRadius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
-        //bloomPassEdges.radius = Number( value );
-        //render();
-        //} );
-        let renderFolder = gui.addFolder('Render');
-        renderFolder.add( Config.bloomPass, 'exposure', 0.1, 5 ).onChange( function ( value ) {
+    renderFolder
+      .add(Config.bloomPass, "radius", 0.0, 1.0)
+      .step(0.01)
+      .onChange(function (value) {
+        renderer.bloomPass.radius = Number(value);
+        render();
+      });
+    //nodesFolder.open()
+    //sceneFolder.open()
+    //edgesFolder.open()
+    //renderFolder.open()
 
-            renderer.toneMappingExposure = Math.pow( value, 4.0 );
-            render()
+    /* Controls */
+    //const controlsFolder = gui.addFolder('Controls');
+    //controlsFolder.add(Config.controls, 'autoRotate').name('Auto Rotate').onChange((value) => {
+    //this.controls.autoRotate = value;
+    //});
+    //const controlsAutoRotateSpeedGui = controlsFolder.add(Config.controls, 'autoRotateSpeed', -1, 1).name('Rotation Speed');
+    //controlsAutoRotateSpeedGui.onChange((value) => {
+    //this.controls.enableRotate = false;
+    //this.controls.autoRotateSpeed = value;
+    //});
+    //controlsAutoRotateSpeedGui.onFinishChange(() => {
+    //this.controls.enableRotate = true;
+    //});
 
-        } );
-        renderFolder.add( Config.bloomPass, 'threshold', 0.0, 1.0 ).onChange( function ( value ) {
-
-            renderer.bloomPass.threshold = Number( value );
-            render()
-
-        } );
-
-        renderFolder.add( Config.bloomPass, 'strength', 0.0, 10.0 ).onChange( function ( value ) {
-
-            renderer.bloomPass.strength = Number( value );
-            render()
-
-        } );
-
-        renderFolder.add( Config.bloomPass, 'radius', 0.0, 1.0 ).step( 0.01 ).onChange( function ( value ) {
-
-            renderer.bloomPass.radius = Number( value );
-            render()
-
-        } );
-        //nodesFolder.open()
-        //sceneFolder.open()
-        //edgesFolder.open()
-        //renderFolder.open()
-
-        /* Controls */
-        //const controlsFolder = gui.addFolder('Controls');
-        //controlsFolder.add(Config.controls, 'autoRotate').name('Auto Rotate').onChange((value) => {
-        //this.controls.autoRotate = value;
-        //});
-        //const controlsAutoRotateSpeedGui = controlsFolder.add(Config.controls, 'autoRotateSpeed', -1, 1).name('Rotation Speed');
-        //controlsAutoRotateSpeedGui.onChange((value) => {
-        //this.controls.enableRotate = false;
-        //this.controls.autoRotateSpeed = value;
-        //});
-        //controlsAutoRotateSpeedGui.onFinishChange(() => {
-        //this.controls.enableRotate = true;
-        //});
-
-        renderer.updateSize();
-        /* Mesh */
-
-    }
-    updateComunityField(values){
-        values.unshift('');
-        updateDropdown(this.comunityField , values);
-    }
-    updateNodeColorProp(values){
-        values.unshift('');
-        values = values.filter(v=> v != 'pos')
-        updateDropdown(this.colorField , values);
-        updateDropdown(this.colorProp , values);
-        updateDropdown(this.sizeField , values.filter(v=> v!='color'));
-    }
-    updateEdgeColorProp(values){
-        values.unshift('');
-        updateDropdown(this.colorEdgeField , values);
-        updateDropdown(this.colorEdgeProp , values);
-    }
-
-
-
+    renderer.updateSize();
+    /* Mesh */
+  }
+  updateComunityField(values) {
+    values.unshift("");
+    updateDropdown(this.comunityField, values);
+  }
+  updateEdgesGroupField(values) {
+    values.unshift("");
+    updateDropdown(this.edgesGroupField, values);
+  }
+  updateNodeColorProp(values) {
+    values.unshift("");
+    values = values.filter((v) => v != "pos");
+    updateDropdown(this.colorField, values);
+    updateDropdown(this.colorProp, values);
+    updateDropdown(
+      this.sizeField,
+      values.filter((v) => v != "color")
+    );
+  }
+  updateEdgeColorProp(values) {
+    values.unshift("");
+    updateDropdown(this.colorEdgeField, values);
+    updateDropdown(this.colorEdgeProp, values);
+  }
 }
 
 //unreal bloom effect

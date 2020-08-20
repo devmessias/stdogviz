@@ -72,6 +72,7 @@ import DatGUI from './interactions/datGUI';
             stopChanges: false,
             renders: [],
             comunityField:{},
+            edgesGroupField:{},
             rendering: false,
             defaultProps: {}
         }
@@ -145,9 +146,13 @@ import DatGUI from './interactions/datGUI';
      * Random select a element of a given array
      */
     ressetLook(){
-        let position = this.edges.instancedEdges.geometry.boundingSphere.center
-        this.camera.position.z = 4*this.edges.instancedEdges.geometry.boundingSphere.radius
+        // let position = this.edges.edgesGroup["main"].mesh.geometry.boundingSphere.center
+        // this.camera.position.z = 4*this.edges.edgesGroup["main"].mesh.geometry.boundingSphere.radius
         //this.camera.position.z = 4;
+        let position = {x:0, y:1, z:-1};
+        let radius = 15;
+        this.camera.position.z = 4*radius;
+        
         this.camera.lookAt(position)
         this.camera.updateProjectionMatrix();
         this.renderer.render()

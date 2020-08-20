@@ -65,6 +65,7 @@ export default {
     },
     edges: {
         width: 0.5,
+        blending:"Additive",
         show: true,
         color: 0xff,
         //color: 0x0000ff,

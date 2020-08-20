@@ -70,7 +70,9 @@ function listenerFunction(message) {
         graphObj.edges.createEdges(
           message.nodes,
           message.edges,
-          message.defaultProps
+          message.defaultProps,
+          message.group
+
         );
         console.groupEnd();
         console.timeEnd("creatingEdges");
@@ -95,6 +97,9 @@ function listenerFunction(message) {
         graphObj.datGui.updateNodeColorProp(message.nodes.props);
         graphObj.datGui.updateComunityField(
           Object.keys(graphObj.nodes.nodesGroup)
+        );
+        graphObj.datGui.updateEdgesGroupField(
+          Object.keys(graphObj.edges.edgesGroup)
         );
         //datGui.updateEdgeColorProp(message.edges.props)
         //camera.lookAt(nodes0.instancedNodes);
