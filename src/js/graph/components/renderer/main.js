@@ -122,8 +122,9 @@ export default class Renderer {
         // Listeners
         document.addEventListener('DOMContentLoaded', () => this.updateSize(), false);
         window.addEventListener('resize', () => this.updateSize(), false);
+        canvas.addEventListener('overflow', () => this.updateSize(), false);
+        canvas.addEventListener('underflow', () => this.updateSize(), false);
 
-        //
         this.controls.addEventListener('change', ()=>this.render());
 
         this.render = this.render.bind(this)
