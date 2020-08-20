@@ -68,14 +68,14 @@ export default class Edges {
     for (const [edgesGroupName, edgesObj] of this.getGroup()) {
       edgesObj.mesh.material.color = color;
       //this.instancedEdges.material.blending=THREE.AdditiveBlending,c
-      edgesObj.mesh.needsUpdate = true;
+      edgesObj.mesh.material.needsUpdate = true;
     }
   }
   changeWidth(width) {
     for (const [edgesGroupName, edgesObj] of this.getGroup()) {
       edgesObj.mesh.material.linewidth = width;
       //this.instancedEdges.material.blending=THREE.AdditiveBlending,c
-      edgesObj.mesh.needsUpdate = true;
+      edgesObj.mesh.material.needsUpdate = true;
     }
   }
   colorByProp(prop) {
@@ -90,7 +90,7 @@ export default class Edges {
     const bufferColors = colors
       .map((color, index) => [values[index], color]) // add the prop to sort by
       .sort(([val1], [val2]) => val2 - val1) // sort by the prop data
-      .map(([, color]) => color)
+      .map(([, color]   ) => color)
       .map(([r, g, b, alpha]) => [r, g, b, r, g, b])
       .flat();
 
@@ -110,7 +110,7 @@ export default class Edges {
     for (const [edgesGroupName, edgesObj] of this.getGroup()) {
       edgesObj.mesh.material.opacity = value;
       //this.instancedEdges.material.blending=THREE.AdditiveBlending,c
-      edgesObj.mesh.needsUpdate = true;
+      edgesObj.mesh.material.needsUpdate = true;
     }
   }
   changeBlending(value) {
@@ -125,7 +125,7 @@ export default class Edges {
       edgesObj.mesh.material.blending = blending;
 
       //this.instancedEdges.material.blending=THREE.AdditiveBlending,c
-      edgesObj.mesh.needsUpdate = true;
+      edgesObj.mesh.material.needsUpdate = true;
     }
   }
   ressetVerticesPos(nodesData, edgesData) {
@@ -189,7 +189,7 @@ export default class Edges {
     var material = new THREE.LineBasicMaterial({
       vertexColors: false,
       blending: THREE.AdditiveBlending,
-      transparent: false,
+      transparent: true,
       color: 0xfff,
       opacity: 0.4,
       linewidth: 2,

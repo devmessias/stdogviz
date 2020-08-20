@@ -165,17 +165,7 @@ export default class DatGUI {
     //.onChange((color) => {
     //edges0.changeColor(color)
     //});
-    edgesFolder
-      .add(Config.edges, "opacity", 0, 1)
-      .name("Opacity")
-      .onChange((value) => {
-        edges0.changeOpacity(value);
-
-        render();
-        //node.material.opacity=value;
-      });
-
-    edgesFolder
+     edgesFolder
       .add(Config.edges, "width", 0.0, 5, 0.01)
       .name("Width")
       .onChange((value) => {
@@ -203,13 +193,17 @@ export default class DatGUI {
         edges0.changeColorUniform(color);
         render();
       });
-    edgesFolder
+   edgesFolder
       .add(Config.edges, "opacity", 0, 1)
       .name("Opacity")
       .onChange((value) => {
         edges0.changeOpacity(value);
+
+        render();
         //node.material.opacity=value;
       });
+
+
     edgesFolder
       .add(Config.edges, "blending", {
 
@@ -222,6 +216,7 @@ export default class DatGUI {
       .name("Blending")
       .onChange((value) => {
         edges0.changeBlending(value);
+        render();
       });
 
     //Edges Bloom
