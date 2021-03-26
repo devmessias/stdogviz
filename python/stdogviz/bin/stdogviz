@@ -80,6 +80,7 @@ def dummyGraph():
     edges["props"] = defaultEdgeProps
     State["graphLoaded"] = True
     State["graphData"]["main"] = {}
+    State["graphData"]["main"]["drawNodes"] = True 
     State["graphData"]["main"]["numNodes"] = n
     State["graphData"]["main"]["nodes"] = nodes
     State["graphData"]["main"]["edges"] = edges
@@ -138,6 +139,8 @@ def loadGraph(fileName, group="main"):
     State["defaultEdgeProps"] = defaultEdgeProps
 
     State["graphData"][group] = {}
+
+    State["graphData"][group]["drawNodes"] = True 
     State["graphData"][group]["numNodes"] = n
     State["graphData"][group]["nodes"] = nodes
     State["graphData"][group]["edges"] = edges
@@ -154,11 +157,13 @@ def recivingNewGraph(dataViz):
     State["graphData"][group] = {}
     State["graphData"][group]["nodes"] = dataViz["nodes"]
     State["graphData"][group]["edges"] = dataViz["edges"]
+    State["graphData"][group]["drawNodes"] = dataViz["drawNodes"]
     State["graphData"][group]["numNodes"] = dataViz["n"]
     State["defaultProps"] = dataViz["defaultProps"]
     State["defaultEdgeProps"] = dataViz["defaultEdgeProps"]
 
     data = {"type":"yourGraphData", 
+            "drawNodes": dataViz["drawNodes"],
             "nodes":dataViz["nodes"], "edges": dataViz["edges"],
             "defaultProps":State["defaultProps"], "group":group}
  
@@ -173,6 +178,7 @@ def getGraph():
     if State["graphLoaded"]:
         for group in State["graphData"].keys():
             data = {"type":"yourGraphData", 
+                "drawNodes": State["graphData"][group]["drawNodes"],
                 "nodes":State["graphData"][group]["nodes"], 
                 "edges": State["graphData"][group]["edges"],
                 "group": group,
@@ -226,6 +232,7 @@ def sendRenderedImg(data):
     msg = ""
     print("\n\n rendered img \n\n\n")
     State["imgURI"] = data["imgURI"]
+  
     data = {"type": "askToRenderMyImg", "msg":"",
         "imgURI": data["imgURI"], 'time': data['time']
     }
@@ -243,7 +250,8 @@ def updateNodeColors(data):
 
 @socketio.on('updateNodePositions')
 def updateNodePositions(data):
-    print(data)
+    global State
+    State["graphData"][data["group"]]["nodes"]["pos"] = data["positions"]
     data = {"type": "updateNodePositions", "msg":"",
         'positions': data['positions'],
         "group": data["group"]
@@ -311,4 +319,4 @@ if __name__ == '__main__':
         import webbrowser
         webbrowser.open("http:/localhost:5000", new=2)
 
-    socketio.run(app, debug=False)
+    socketio.run(app, debug=True, use_reloader=True)

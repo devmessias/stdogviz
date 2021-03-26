@@ -76,7 +76,7 @@ export default class DatGUI {
         render();
       });
     nodesFolder.add(Config.nodes, "show").onChange(function (value) {
-      for (let [nodeName, node] of Object.entries(nodes0.nodes)) {
+      for (let [nodeName, node] of Object.entries(nodes0.nodesGroup)) {
         node.visible = value;
       }
 

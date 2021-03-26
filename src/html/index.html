@@ -2,11 +2,131 @@
 <html lang="en">
   <head>
 
-    <%= require('html-loader!./components/imports.html') %>
+    <link 
+    rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" 
+                     integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/alertify.min.css"/>
+    <!-- Default theme -->
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/alertifyjs@1.13.1/build/css/themes/default.min.css"/>
+    
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js" crossorigin="anonymous"></script>-->
+    
     <meta charset="UTF-8">
 <style>
-    <%= require('html-loader!./components/main.css') %>
-    <%= require('html-loader!./components/rStats.css') %>
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow:hidden;
+   }
+   #graphCanvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      z-index:-1;
+   }
+   #containergraphCanvas{
+       position: relative;
+       width: 100%;
+       height: 100%;
+       display:block;
+   }
+   
+   #datGuigraphCanvas{
+   
+   }
+   
+
+
+    .alarm{
+      color: #b70000;
+      text-shadow: 0 0 0 #b70000,
+      0 0 1px #fff,
+      0 0 1px #fff,
+      0 0 2px #fff,
+      0 0 2px #fff,
+      0 0 3px #fff,
+      0 0 3px #fff,
+      0 0 4px #fff,
+      0 0 4px #fff;
+    }
+    
+    .rs-base{
+      position: absolute;
+      z-index: 10000;
+      padding: 10px;
+      background-color: #222;
+      font-size: 10px;
+      line-height: 1.2em;
+      width: 350px;
+      font-family: 'Roboto Condensed', tahoma, sans-serif;
+      left: 0;
+      top: 0;
+      overflow: hidden;
+    }
+    
+    .rs-base h1{
+      margin: 0;
+      padding: 0;
+      font-size: 1.4em;
+      color: #fff;
+      margin-bottom: 5px;
+      cursor: pointer;
+    }
+    
+    .rs-base div.rs-group{
+      margin-bottom: 10px;
+    }
+    
+    .rs-base div.rs-group.hidden{
+      display: none;
+    }
+    
+    .rs-base div.rs-fraction{
+      position: relative;
+      margin-bottom: 5px;
+    }
+    
+    .rs-base div.rs-fraction p{
+      width: 120px;
+      text-align: right;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .rs-base div.rs-legend{
+      position: absolute;
+      line-height: 1em;
+    }
+    
+    .rs-base div.rs-counter-base{
+      position: relative;
+      margin: 2px 0;
+      height: 1em;
+      color: white;
+    }
+    
+    .rs-base span.rs-counter-id{
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+    
+    .rs-base div.rs-counter-value{
+      position: absolute;
+      left: 90px;
+      width: 30px;
+      height: 1em;
+      top: 0;
+      text-align: right;
+    }
+    
+    .rs-base canvas.rs-canvas{
+      position: absolute;
+      right: 0;
+    }
 </style>
     <title><%= htmlWebpackPlugin.options.title %></title>
 
@@ -22,10 +142,45 @@
                 id="datGuigraphCanvas">
             </div>
         </div>
-
-    <%= require('html-loader!./components/modalSave.html') %>
-    <% if (htmlWebpackPlugin.options.env === 'dev') { %>
-       <% } %>
+        <div class="modal fade" id="saveImageModal" tabindex="-1" role="dialog" aria-labelledby="saveImageModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="saveImageModalLabel">Export Image</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div class="modal-body">
+                <form>
+                  <div class="form-group">
+                    <label for="widthSaveImage" class="col-form-label">Width</label>
+                    <input type="number" class="form-control" id="widthSaveImage">
+                  </div>
+                  <div class="form-group">
+                    <label for="heightSaveImage" class="col-form-label">Height</label>
+                    <input type="number" class="form-control" id="heightSaveImage">
+                  </div>
+        
+         <div class="form-check">
+             <input type="checkbox" class="form-check-input" id="saveWithTransparency">
+             <label class="form-check-label" for="saveWithTransparency">Transparency2</label>
+          </div> 
+         <div class="form-check">
+             <input type="checkbox" class="form-check-input" id="send2server">
+             <label class="form-check-label" for="send2server">Send2Server</label>
+          </div> 
+         
+                </form>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="btnSaveImage">Save/Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+   
        <script src="libs/rStats.js"></script>
     <script src="libs/rStats.extras.js"></script>
 

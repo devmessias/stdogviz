@@ -134,7 +134,7 @@ export default class Renderer {
         const btnSave = document.getElementById("btnSaveImage");
         if(btnSave)
             btnSave.addEventListener("click",  event=>this.takeScreenshotModal())
-
+        this.initComposer()
     }
     initComposer(){
         this.composer = new EffectComposer( this.renderer );
@@ -329,8 +329,10 @@ export default class Renderer {
         const send2server = document.getElementById("send2server").checked;
 
         const DataURI = this.getURI(widthImage, heightImage, saveWithTransparency);
+        const time = new Date().valueOf()
+        window.alert(time)
         if (send2server && this.dataPool){
-            this.dataPool.send2server(DataURI)
+            this.dataPool.send2server(DataURI, time)
         }else{
             saveDataURI(defaultFileName(".png"), DataURI);
         }

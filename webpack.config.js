@@ -109,8 +109,8 @@ module.exports = env => {
         //historyApiFallback: true,
         open: true,
         openPage:
-          "localhost:9002?use2d=0&highQuality=1&bloom=0&address=localhost:5000",
-        port: 9002,
+          "localhost:9001?use2d=0&highQuality=1&bloom=0&address=localhost:5000",
+        port: 9001,
         watchOptions: {
           aggregateTimeout: 200,
           poll: 1000,

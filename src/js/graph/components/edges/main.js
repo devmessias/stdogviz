@@ -43,12 +43,13 @@ export default class Edges {
   }
   //deleteByNode(nodeId){
   //}
-  updateNodePositions(positions) {
+  updateNodePositions(positions, groupName) {
     let positionVertices = [];
+    let edgesObj = this.edgesGroup[groupName];
     //A simple arrow function  in order to clean the code
     const f = (arr, index) =>
       arr.push(...[0, 1, 2].map((i) => positions[index + i]));
-    for (let [s, t] of this.edgesData.nodes) {
+    for (let [s, t] of edgesObj.edgesData.nodes) {
       let id_s = s * 3;
       let id_t = t * 3;
       //positionVertices.push(
@@ -57,11 +58,14 @@ export default class Edges {
       f(positionVertices, id_s);
       f(positionVertices, id_t);
     }
-    this.instancedEdges.geometry.attributes.position.array = new Float32Array(
+    edgesObj.mesh.geometry.attributes.position.array = new Float32Array(
       positionVertices
     );
-    this.instancedEdges.geometry.attributes.position.needsUpdate = true;
-    this.instancedEdges.geometry.computeBoundingSphere();
+   // edgesObj.mesh.geometry.attributes.position.needsUpdate = true;
+   // edgesObj.mesh.geometry.dispose();
+    edgesObj.mesh.geometry = new THREE.BufferGeometry().setFromPoints(
+        positionVertices
+    );
   }
   changeColorUniform(colorHex) {
     let color = new THREE.Color(colorHex);
@@ -90,7 +94,7 @@ export default class Edges {
     const bufferColors = colors
       .map((color, index) => [values[index], color]) // add the prop to sort by
       .sort(([val1], [val2]) => val2 - val1) // sort by the prop data
-      .map(([, color]   ) => color)
+      .map(([, color]) => color)
       .map(([r, g, b, alpha]) => [r, g, b, r, g, b])
       .flat();
 
@@ -158,7 +162,6 @@ export default class Edges {
     edgesObj.mesh.geometry.dispose();
     edgesObj.mesh.material.dispose();
     edgesObj.mesh.geometry.needsUpdate = true;
-    edgesObj.mesh.needsUpdate = true;
     this.scene.remove(edgesObj.mesh);
     delete this.edgesGroup[edgesGroupName];
   }
@@ -201,7 +204,7 @@ export default class Edges {
     );
     //geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( this.colors, 3 ) );
 
-    geometry.computeBoundingSphere();
+    //geometry.computeBoundingSphere();
 
     let edges = new THREE.Line(geometry, material);
     this.scene.add(edges);

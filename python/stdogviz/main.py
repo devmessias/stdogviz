@@ -9,6 +9,7 @@ from subprocess import Popen, PIPE
 
 import time
 
+
 def ig2vis(g):
     """Convert a igraph graph to a dict compatible with 
     the viz
@@ -81,8 +82,8 @@ class CustomNamespace(socketio.ClientNamespace):
         pass
         
     def on_reciveRenderedImg(self, data):
-        print("recived img")
         self.client.storeImg(data['imgURI'], data['time'])
+
 
 class StDoGClient(socketio.Client):
     def __init__(self, 
@@ -109,9 +110,17 @@ class StDoGClient(socketio.Client):
     def sendGraph(self, g, group="main"):
         dataViz = ig2vis(g)
         dataViz["group"] = group
+        dataViz["drawNodes"] = True 
         self.emit("newGraph", callback=lambda msg:print(msg), 
                   data=dataViz)
-        
+
+    def sendEdges(self, g, group="main"):
+        dataViz = ig2vis(g)
+        dataViz["group"] = group
+        dataViz["drawNodes"] = False
+        self.emit("sendEdges", callback=lambda msg:print(msg), 
+                  data=dataViz)
+         
 
     def storeImg(self, imgURI, time):
     
@@ -121,7 +130,20 @@ class StDoGClient(socketio.Client):
             self.imgURI[time]=imgURI
         
     def getImg(self, historyId=0):
-        i = np.sort(list(self.imgURI.keys()))[::-1][historyId]
+        keys = np.sort(list(self.imgURI.keys()))[::-1]
+        #import pdb; pdb.set_trace();
+        nImgs = len(keys)
+        if  nImgs == 0:
+            print('Sem imagens')
+            return b64toImg('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg===')
+            #return {'msg': '0 rendered images', 'img':None}
+        
+        if historyId > nImgs -1 or historyId < 0:
+            historyId = 0
+
+        print(f'{nImgs} Imagens disponíveis. Utilizando a {nImgs - historyId}')
+        i = keys[historyId]
+        
         img = b64toImg(self.imgURI[i])
         self.img = img
         return img
